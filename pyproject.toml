@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sysengn"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "advanced-yaml>=0.4.4",
+]
+
+[project.scripts]
+sysengn = "sysengn.main:main"
+
+[dependency-groups]
+dev = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.0.0",
+    "pyright>=1.1.407",
+    "pytest>=9.0.2",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.14.10",
+]
+
+[tool.pytest.ini_options]
+addopts = "--cov=sysengn --cov-report=term-missing"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src/sysengn"]
+
+[tool.coverage.report]
+fail_under = 75
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]

@@ -1,0 +1,10 @@
+site_name: SysEngn
+site_description: Documentation for SysEngn (System Engine)
+site_author: SysEngn Team
+
+theme:
+  name: material
+
+nav:
+  - Home: index.md
+
