@@ -1,5 +1,4 @@
 from sysengn.main import get_greeting, main
-import pytest
 
 
 def test_get_greeting():
