@@ -27,6 +27,9 @@ class User:
     id: str
     email: str
     name: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    preferred_color: str | None = None
     roles: list[Role] = field(default_factory=list)
     theme_preference: str = "DARK"
 
@@ -84,7 +87,7 @@ def authenticate_local_user(email: str, password: str) -> User | None:
     try:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT id, email, name, password_hash, roles, theme_preference FROM users WHERE email = ?",
+            "SELECT id, email, name, first_name, last_name, preferred_color, password_hash, roles, theme_preference FROM users WHERE email = ?",
             (email,),
         )
         row = cursor.fetchone()
@@ -120,6 +123,9 @@ def authenticate_local_user(email: str, password: str) -> User | None:
                 id=row["id"],
                 email=row["email"],
                 name=row["name"],
+                first_name=row["first_name"],
+                last_name=row["last_name"],
+                preferred_color=row["preferred_color"],
                 roles=roles,
                 theme_preference=row["theme_preference"] or "DARK",
             )
@@ -143,6 +149,28 @@ def update_user_theme_preference(user_id: str, theme_mode: str) -> None:
         conn.commit()
     except Exception as e:
         logger.error(f"Error updating theme preference: {e}")
+    finally:
+        conn.close()
+
+
+def update_user_profile(
+    user_id: str,
+    first_name: str | None,
+    last_name: str | None,
+    preferred_color: str | None,
+) -> None:
+    """Updates the user's profile information in the database."""
+
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE users SET first_name = ?, last_name = ?, preferred_color = ? WHERE id = ?",
+            (first_name, last_name, preferred_color, user_id),
+        )
+        conn.commit()
+    except Exception as e:
+        logger.error(f"Error updating user profile: {e}")
     finally:
         conn.close()
 

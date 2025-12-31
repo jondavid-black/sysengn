@@ -125,9 +125,17 @@ def main_page(page: ft.Page) -> None:
 
         return TeamScreen(page, user)
 
+    def get_user_profile_screen() -> ft.Control:
+        from sysengn.ui.user_profile_screen import UserProfileScreen
+
+        # When saving/cancelling, we might want to just go back to home or previous tab
+        return UserProfileScreen(
+            page, user, on_back=lambda: change_tab(0), on_save=update_avatar
+        )
+
     def build_banner(
         page: ft.Page, user: User, on_tab_change
-    ) -> tuple[ft.Container, ft.Tabs]:
+    ) -> tuple[ft.Container, ft.Tabs, ft.CircleAvatar]:
         # Left: Icon, Name, Project Dropdown, Workspace Dropdown
 
         # We need access to projects for the dropdown
@@ -287,9 +295,14 @@ def main_page(page: ft.Page) -> None:
         )
 
         user_initials = user.name[0].upper() if user.name else user.email[0].upper()
+
+        # If user has first and last name, show those initials
+        if user.first_name and user.last_name:
+            user_initials = f"{user.first_name[0].upper()}{user.last_name[0].upper()}"
+
         avatar = ft.CircleAvatar(
             content=ft.Text(user_initials, color=ft.Colors.WHITE),
-            bgcolor=ft.Colors.BLUE,
+            bgcolor=user.preferred_color if user.preferred_color else ft.Colors.BLUE,
             tooltip=f"{user.name or user.email}",
         )
 
@@ -299,6 +312,11 @@ def main_page(page: ft.Page) -> None:
             items=[
                 item
                 for item in [
+                    ft.PopupMenuItem(
+                        text="Profile",
+                        icon=ft.Icons.PERSON,
+                        on_click=lambda e: change_tab(4),  # 4 will be profile
+                    ),
                     ft.PopupMenuItem(
                         text="Admin Panel",
                         icon=ft.Icons.ADMIN_PANEL_SETTINGS,
@@ -335,17 +353,21 @@ def main_page(page: ft.Page) -> None:
             expand=True,
         )
 
-        return ft.Container(
-            content=banner_row,
-            padding=ft.padding.symmetric(horizontal=20, vertical=10),
-            bgcolor="#36454F",  # Charcoal
-            shadow=ft.BoxShadow(
-                spread_radius=1,
-                blur_radius=5,
-                color=ft.Colors.BLACK12,
-                offset=ft.Offset(0, 2),
+        return (
+            ft.Container(
+                content=banner_row,
+                padding=ft.padding.symmetric(horizontal=20, vertical=10),
+                bgcolor="#36454F",  # Charcoal
+                shadow=ft.BoxShadow(
+                    spread_radius=1,
+                    blur_radius=5,
+                    color=ft.Colors.BLACK12,
+                    offset=ft.Offset(0, 2),
+                ),
             ),
-        ), tabs
+            tabs,
+            avatar,
+        )
 
     # Setup Page Layout
     page.padding = 0
@@ -356,6 +378,25 @@ def main_page(page: ft.Page) -> None:
     # Reference to tabs control to break circular dependency
     tabs_ref: list[ft.Tabs] = []
 
+    # Reference to avatar control
+    avatar_ref: list[ft.CircleAvatar] = []
+
+    def update_avatar():
+        if avatar_ref:
+            av = avatar_ref[0]
+            user_initials = user.name[0].upper() if user.name else user.email[0].upper()
+            if user.first_name and user.last_name:
+                user_initials = (
+                    f"{user.first_name[0].upper()}{user.last_name[0].upper()}"
+                )
+
+            if isinstance(av.content, ft.Text):
+                av.content.value = user_initials
+            av.bgcolor = (
+                user.preferred_color if user.preferred_color else ft.Colors.BLUE
+            )
+            av.update()
+
     def change_tab(index: int):
         # Update tab selection only if it's one of the main tabs (0, 1, 2, 3)
         if index >= 0 and tabs_ref:
@@ -364,8 +405,15 @@ def main_page(page: ft.Page) -> None:
             if tabs_control.page:
                 tabs_control.update()
         else:
-            # If going home (-1), just skip tab update
-            pass
+            # If going home (-1) or no tabs, try to reset tabs selection if we are "out" of tabs
+            if tabs_ref:
+                tabs_control = tabs_ref[0]
+                # If index is out of range (like 4 for profile), we might want to unselect all if possible,
+                # but Flet tabs always select one.
+                # So maybe we just don't update the visual tab selection if it's a hidden screen like profile?
+                # Actually, 4 is not in the tabs list [0,1,2,3].
+                # If we set selected_index to something invalid, it might error or do nothing.
+                pass
 
         if index == 0:
             content_area.content = get_mock_home_screen()
@@ -375,12 +423,15 @@ def main_page(page: ft.Page) -> None:
             content_area.content = get_mock_se_screen()
         elif index == 3:
             content_area.content = get_mock_team_screen()
+        elif index == 4:
+            content_area.content = get_user_profile_screen()
 
         if content_area.page:
             content_area.update()
 
-    banner, tabs_control = build_banner(page, user, change_tab)
+    banner, tabs_control, avatar_control = build_banner(page, user, change_tab)
     tabs_ref.append(tabs_control)
+    avatar_ref.append(avatar_control)
 
     change_tab(0)  # Initialize with Home Screen
 
