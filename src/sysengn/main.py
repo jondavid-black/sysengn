@@ -432,6 +432,9 @@ def main() -> None:
 
         init_db()
 
+        # Set theme mode to system default
+        page.theme_mode = ft.ThemeMode.SYSTEM
+
         page.session.set("allow_passwords", args.allow_passwords)  # type: ignore
         login_page(page, allow_passwords=args.allow_passwords)
 
