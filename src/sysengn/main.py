@@ -190,11 +190,14 @@ def main_page(page: ft.Page) -> None:
 
         left_section = ft.Row(
             controls=[
-                ft.Image(
-                    src="icons/sysengn_logo_core_tiny.png",
-                    width=32,
-                    height=32,
-                    tooltip="SysEngn",
+                ft.Container(
+                    content=ft.Image(
+                        src="sysengn_logo_core_tiny_transparent.png",
+                        width=55,
+                        height=45,
+                        tooltip="Go to Home",
+                    ),
+                    on_click=lambda _: on_tab_change(0),
                 ),
                 ft.Container(width=10),
                 project_dropdown,
@@ -214,7 +217,24 @@ def main_page(page: ft.Page) -> None:
             unselected_label_color=ft.Colors.GREY_400,
             divider_color="transparent",
             tabs=[
-                ft.Tab(icon=ft.Icons.HOME, text="Home"),
+                ft.Tab(text="Home"),
+                ft.Tab(text="PM"),
+                ft.Tab(text="SE"),
+                ft.Tab(text="Team"),
+            ],
+            on_change=lambda e: on_tab_change(e.control.selected_index),
+        )
+
+        # Center: Tabs
+        tabs = ft.Tabs(
+            selected_index=0,
+            animation_duration=300,
+            indicator_color=ft.Colors.BLUE_200,
+            label_color=ft.Colors.BLUE_200,
+            unselected_label_color=ft.Colors.GREY_400,
+            divider_color="transparent",
+            tabs=[
+                ft.Tab(text="Home"),
                 ft.Tab(text="PM"),
                 ft.Tab(text="SE"),
                 ft.Tab(text="Team"),
