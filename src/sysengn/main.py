@@ -4,11 +4,11 @@ import flet as ft
 
 from sysengn.core.auth import (
     User,
-    get_oauth_providers,
-    authenticate_local_user,
     Role,
     update_user_theme_preference,
 )
+from sysengn.ui.login_screen import login_page
+from sysengn.ui.admin_screen import admin_page
 
 
 def load_env_file(filepath: str = ".env") -> None:
@@ -46,105 +46,6 @@ def get_greeting() -> str:
         The greeting string.
     """
     return "Hello from SysEngn!"
-
-
-def login_page(page: ft.Page, allow_passwords: bool = False) -> None:
-    """The login page of the application."""
-    page.title = "SysEngn - Login"
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-
-    def handle_login_button(provider):
-        page.login(provider)  # type: ignore
-
-    providers = get_oauth_providers()
-    login_buttons = []
-
-    for provider in providers:
-        # Check provider type or endpoint to determine name
-        name = "OAuth Provider"
-        # In older flet versions or specific providers we might not have easy access to endpoint properties directly if not exposed.
-        # But we know what we added.
-        if "google" in getattr(provider, "authorization_endpoint", ""):
-            name = "Google"
-        elif "github" in getattr(provider, "authorization_endpoint", ""):
-            name = "GitHub"
-
-        # Fallback using class name if endpoints are not reliable/available
-        if name == "OAuth Provider":
-            if "Google" in provider.__class__.__name__:
-                name = "Google"
-            elif "GitHub" in provider.__class__.__name__:
-                name = "GitHub"
-
-        login_buttons.append(
-            ft.ElevatedButton(
-                content=ft.Text(f"Login with {name}"),
-                on_click=lambda _, p=provider: handle_login_button(p),
-                disabled=True,  # Disabled for now
-            )
-        )
-
-    if not login_buttons and not allow_passwords:
-        # Should not show this message if we have buttons even if disabled, but logic stands.
-        # However, request says "disable but don't remove".
-        pass
-
-    content: list[ft.Control] = [
-        ft.Image(src="sysengn_splash.png", width=300),
-        ft.Text("Welcome to SysEngn", size=30, weight=ft.FontWeight.BOLD),
-        ft.Text("Please sign in to continue", size=16),
-        ft.Divider(),
-        *login_buttons,
-    ]
-
-    # Always allow passwords for now as default
-    if True:
-        email_field = ft.TextField(label="Email", width=300)
-        password_field = ft.TextField(label="Password", password=True, width=300)
-
-        def handle_local_login(e):
-            if not email_field.value or not password_field.value:
-                page.overlay.append(
-                    ft.SnackBar(ft.Text("Please enter email and password"), open=True)
-                )
-                page.update()
-                return
-
-            user = authenticate_local_user(email_field.value, password_field.value)
-            if user:
-                page.session.set("user", user)  # type: ignore
-                page.clean()
-                main_page(page)
-            else:
-                page.overlay.append(
-                    ft.SnackBar(ft.Text("Invalid credentials"), open=True)
-                )
-                page.update()
-
-        # Add on_submit event handler to both fields
-        email_field.on_submit = handle_local_login
-        password_field.on_submit = handle_local_login
-
-        content.extend(
-            [
-                ft.Divider(),
-                ft.Text("Or sign in with email", size=14),
-                email_field,
-                password_field,
-                ft.ElevatedButton(
-                    content=ft.Text("Sign In"), on_click=handle_local_login
-                ),
-            ]
-        )
-
-    page.add(
-        ft.Column(
-            controls=content,
-            alignment=ft.MainAxisAlignment.CENTER,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        )
-    )
 
 
 def main_page(page: ft.Page) -> None:
@@ -387,7 +288,7 @@ def main_page(page: ft.Page) -> None:
                     ft.PopupMenuItem(
                         text="Admin Panel",
                         icon=ft.Icons.ADMIN_PANEL_SETTINGS,
-                        on_click=lambda e: admin_page(page),
+                        on_click=lambda e: admin_page(page, lambda: back_to_main(page)),
                     )
                     if user.has_role(Role.ADMIN)
                     else None,  # type: ignore
@@ -478,43 +379,6 @@ def main_page(page: ft.Page) -> None:
     )
 
 
-def admin_page(page: ft.Page) -> None:
-    """The admin dashboard page."""
-    # Double check permission in case of direct navigation (if we had routing)
-    user = page.session.get("user")  # type: ignore
-    if not user or not user.has_role(Role.ADMIN):
-        page.overlay.append(ft.SnackBar(ft.Text("Unauthorized access!"), open=True))
-        page.update()
-        return
-
-    page.clean()
-    page.title = "SysEngn - Admin"
-
-    page.appbar = ft.AppBar(
-        title=ft.Text("Admin Dashboard"),
-        leading=ft.IconButton(
-            ft.Icons.ARROW_BACK, on_click=lambda e: back_to_main(page)
-        ),
-    )
-
-    page.add(
-        ft.Column(
-            [
-                ft.Text("Admin Dashboard", size=30, weight=ft.FontWeight.BOLD),
-                ft.Text("Welcome, Administrator.", size=16),
-                ft.Container(
-                    content=ft.Text(
-                        "Sensitive System Settings (Mock)", color=ft.Colors.WHITE
-                    ),
-                    bgcolor=ft.Colors.RED_900,
-                    padding=20,
-                    border_radius=10,
-                ),
-            ]
-        )
-    )
-
-
 def back_to_main(page: ft.Page):
     """Returns to the main page."""
     page.clean()
@@ -526,7 +390,9 @@ def logout(page: ft.Page):
     page.session.clear()  # type: ignore
     page.clean()
     allow_pass = page.session.get("allow_passwords")  # type: ignore
-    login_page(page, allow_passwords=bool(allow_pass))
+    login_page(
+        page, on_login_success=lambda: main_page(page), allow_passwords=bool(allow_pass)
+    )
 
 
 def main() -> None:
@@ -553,12 +419,16 @@ def main() -> None:
         page.theme_mode = ft.ThemeMode.DARK
 
         # Enable window resizing and maximizing
-        page.window.resizable = True   # Must be True for maximize to work
-        page.window.maximizable = True # Enables the maximize button
-        page.window.minimizable = True # Enables the minimize button
+        page.window.resizable = True  # Must be True for maximize to work
+        page.window.maximizable = True  # Enables the maximize button
+        page.window.minimizable = True  # Enables the minimize button
 
         page.session.set("allow_passwords", args.allow_passwords)  # type: ignore
-        login_page(page, allow_passwords=args.allow_passwords)
+        login_page(
+            page,
+            on_login_success=lambda: main_page(page),
+            allow_passwords=args.allow_passwords,
+        )
 
     view = ft.AppView.WEB_BROWSER if args.web else ft.AppView.FLET_APP
 
@@ -568,7 +438,7 @@ def main() -> None:
     # We need to set a secret key for session/auth to work securely
     # ft.app(target=app_main, view=view, secret_key=os.getenv("APP_SECRET_KEY", "dev_secret_key"))
     # In 0.25.2 secret_key might not be in ft.app arguments directly?
-    # It seems secret_key is not in ft.app signature in 0.25.2.
+    # It seems secret_key is not in ft.app arguments directly in 0.25.2.
     # Sessions might not be fully supported without it or it's handled differently.
     # However, let's try just running without it and see if session works (it might be insecure/in-memory).
     ft.app(

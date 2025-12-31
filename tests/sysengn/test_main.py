@@ -6,12 +6,12 @@ from flet.auth.providers import GoogleOAuthProvider, GitHubOAuthProvider
 
 from sysengn.main import (
     load_env_file,
-    login_page,
     logout,
     main,
     main_page,
     get_greeting,
 )
+from sysengn.ui.login_screen import login_page
 
 
 def test_get_greeting():
@@ -145,7 +145,7 @@ def test_logout():
 # --- login_page Tests ---
 
 
-@patch("sysengn.main.get_oauth_providers")
+@patch("sysengn.ui.login_screen.get_oauth_providers")
 def test_login_page_oauth_buttons(mock_get_providers):
     """Verify OAuth buttons are created."""
     mock_page = MagicMock(spec=ft.Page)
@@ -159,7 +159,7 @@ def test_login_page_oauth_buttons(mock_get_providers):
 
     mock_get_providers.return_value = [google, github]
 
-    login_page(mock_page)
+    login_page(mock_page, on_login_success=MagicMock())
 
     # Dig into the column content to find buttons
     column = mock_page.add.call_args[0][0]
@@ -187,10 +187,10 @@ def test_login_page_oauth_buttons(mock_get_providers):
 def test_login_page_no_providers_no_passwords():
     """Verify login page behavior when no providers and no passwords allowed."""
     mock_page = MagicMock(spec=ft.Page)
-    with patch("sysengn.main.get_oauth_providers", return_value=[]):
+    with patch("sysengn.ui.login_screen.get_oauth_providers", return_value=[]):
         # Even if allow_passwords is False, we force it to True internally now,
         # so we expect the login form, NOT the "No OAuth providers" message.
-        login_page(mock_page, allow_passwords=False)
+        login_page(mock_page, on_login_success=MagicMock(), allow_passwords=False)
 
         column = mock_page.add.call_args[0][0]
         texts = [c.value for c in column.controls if isinstance(c, ft.Text)]
@@ -203,8 +203,9 @@ def test_login_page_no_providers_no_passwords():
 def test_login_page_allow_passwords():
     """Verify password fields appear when allowed."""
     mock_page = MagicMock(spec=ft.Page)
-    with patch("sysengn.main.get_oauth_providers", return_value=[]):
-        login_page(mock_page, allow_passwords=True)
+    with patch("sysengn.ui.login_screen.get_oauth_providers", return_value=[]):
+        on_success = MagicMock()
+        login_page(mock_page, on_login_success=on_success, allow_passwords=True)
 
         column = mock_page.add.call_args[0][0]
         # Check for inputs
@@ -225,7 +226,7 @@ def test_login_page_allow_passwords():
         inputs[0].value = "user@test.com"
         inputs[1].value = "pass"
 
-        with patch("sysengn.main.authenticate_local_user") as mock_auth:
+        with patch("sysengn.ui.login_screen.authenticate_local_user") as mock_auth:
             mock_user = MagicMock()
             mock_auth.return_value = mock_user
 
@@ -236,10 +237,13 @@ def test_login_page_allow_passwords():
             assert mock_page.session.set.called
             assert mock_page.session.set.call_args[0][0] == "user"
             assert mock_page.clean.called
+            assert on_success.called
 
         # Test Local Auth Logic - Failure
         mock_page.reset_mock()
-        with patch("sysengn.main.authenticate_local_user", return_value=None):
+        with patch(
+            "sysengn.ui.login_screen.authenticate_local_user", return_value=None
+        ):
             if signin_btn.on_click:
                 signin_btn.on_click(mock_e)
 
