@@ -187,17 +187,36 @@ def main_page(page: ft.Page) -> None:
     # -- New Banner & Layout Logic --
 
     # Mock Screens
+    def get_mock_home_screen() -> ft.Control:
+        from sysengn.home_screen import HomeScreen
+
+        return HomeScreen(page, user)
+
     def get_mock_pm_screen() -> ft.Control:
         from sysengn.pm_screen import PMScreen
 
-        return PMScreen(page, user)
+        def open_project(project_id: str):
+            # Set active project
+            page.session.set("current_project_id", project_id)  # type: ignore
+
+            # Update Dropdown (find it in banner)
+            # This is a bit tricky as we don't have direct ref to dropdown here easily
+            # But we kept a ref to tabs.
+            # We should probably update the dropdown value.
+
+            # For now, let's just switch tab to SE to show we "opened" it.
+            # Ideally we update the dropdown too.
+            # We can iterate page controls to find banner but that's messy.
+            # Let's rely on re-render or just switch tab.
+
+            change_tab(1)  # Switch to SE tab
+
+        return PMScreen(page, user, on_open_project=open_project)
 
     def get_mock_se_screen() -> ft.Control:
-        return ft.Container(
-            content=ft.Text("Mock SE Screen", size=30, weight=ft.FontWeight.BOLD),
-            alignment=ft.Alignment(0, 0),
-            expand=True,
-        )
+        from sysengn.se_screen import SEScreen
+
+        return SEScreen(page, user)
 
     def get_mock_team_screen() -> ft.Control:
         return ft.Container(
@@ -206,8 +225,52 @@ def main_page(page: ft.Page) -> None:
             expand=True,
         )
 
-    def build_banner(page: ft.Page, user: User, on_tab_change) -> ft.Control:
-        # Left: Icon, Name, Workspace Dropdown
+    def build_banner(
+        page: ft.Page, user: User, on_tab_change
+    ) -> tuple[ft.Container, ft.Tabs]:
+        # Left: Icon, Name, Project Dropdown, Workspace Dropdown
+
+        # We need access to projects for the dropdown
+        from sysengn.project_manager import ProjectManager
+
+        pm = ProjectManager()
+        projects = pm.get_all_projects()
+
+        project_options = [ft.dropdown.Option("Select Project")] + [
+            ft.dropdown.Option(key=p.id, text=p.name) for p in projects
+        ]
+
+        def on_project_change(e):
+            selected_id = e.control.value
+            if selected_id and selected_id != "Select Project":
+                page.session.set("current_project_id", selected_id)  # type: ignore
+                # Refresh current view if it depends on project
+                # We can trigger tab change to reload current tab or just notify
+                # For now, let's just update the banner dropdown
+                project_dropdown.update()
+
+                # If currently on SE screen, we might want to refresh content area
+                # A simple way is to re-trigger change_tab with current index
+                current_tab_idx = tabs.selected_index
+                if current_tab_idx == 1:  # SE Tab
+                    change_tab(1)
+
+        project_dropdown = ft.Dropdown(
+            width=200,
+            text_size=14,
+            content_padding=ft.padding.symmetric(horizontal=10, vertical=0),
+            # Default to first project if available or placeholder
+            value=projects[0].id if projects else "Select Project",
+            options=project_options,
+            border_color=ft.Colors.TRANSPARENT,
+            bgcolor=ft.Colors.GREY_800,
+            color=ft.Colors.WHITE,
+            border_radius=5,
+            icon=ft.Icons.FOLDER_OPEN,
+            tooltip="Select Active Project",
+            on_change=on_project_change,
+        )
+
         workspace_dropdown = ft.Dropdown(
             width=200,
             text_size=14,
@@ -228,9 +291,21 @@ def main_page(page: ft.Page) -> None:
         left_section = ft.Row(
             controls=[
                 ft.Icon(ft.Icons.TERMINAL, size=24, color=ft.Colors.BLUE_200),
-                ft.Text(
-                    "SysEngn", size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE
+                ft.TextButton(
+                    content=ft.Text(
+                        "SysEngn",
+                        size=20,
+                        weight=ft.FontWeight.BOLD,
+                        color=ft.Colors.WHITE,
+                    ),
+                    on_click=lambda _: change_tab(-1),  # -1 for Home
+                    style=ft.ButtonStyle(
+                        overlay_color=ft.Colors.TRANSPARENT,
+                        padding=0,
+                    ),
                 ),
+                ft.Container(width=10),
+                project_dropdown,
                 ft.Container(width=10),
                 workspace_dropdown,
             ],
@@ -357,7 +432,7 @@ def main_page(page: ft.Page) -> None:
                 color=ft.Colors.BLACK12,
                 offset=ft.Offset(0, 2),
             ),
-        )
+        ), tabs
 
     # Setup Page Layout
     page.padding = 0
@@ -365,18 +440,35 @@ def main_page(page: ft.Page) -> None:
 
     content_area = ft.Container(expand=True, padding=20)
 
+    # Reference to tabs control to break circular dependency
+    tabs_ref: list[ft.Tabs] = []
+
     def change_tab(index: int):
-        if index == 0:
+        # Update tab selection only if it's one of the main tabs (0, 1, 2)
+        if index >= 0 and tabs_ref:
+            tabs_control = tabs_ref[0]
+            tabs_control.selected_index = index
+            tabs_control.update()
+        else:
+            # If going home (-1), just skip tab update
+            pass
+
+        if index == -1:
+            content_area.content = get_mock_home_screen()
+        elif index == 0:
             content_area.content = get_mock_pm_screen()
         elif index == 1:
             content_area.content = get_mock_se_screen()
         elif index == 2:
             content_area.content = get_mock_team_screen()
+
         if content_area.page:
             content_area.update()
 
-    banner = build_banner(page, user, change_tab)
-    change_tab(0)  # Initialize
+    banner, tabs_control = build_banner(page, user, change_tab)
+    tabs_ref.append(tabs_control)
+
+    change_tab(-1)  # Initialize with Home Screen
 
     page.clean()
     page.add(
@@ -475,6 +567,7 @@ def main() -> None:
     ft.app(
         target=app_main,
         view=view,
+        assets_dir="assets",
     )
 
 

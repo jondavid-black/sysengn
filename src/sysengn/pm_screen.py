@@ -3,8 +3,20 @@ from sysengn.project_manager import ProjectManager
 from sysengn.auth import User
 
 
-def PMScreen(page: ft.Page, user: User) -> ft.Control:
-    """The Project Management Screen component."""
+from typing import Callable, Optional
+
+
+def PMScreen(
+    page: ft.Page, user: User, on_open_project: Optional[Callable[[str], None]] = None
+) -> ft.Control:
+    """The Project Management Screen component.
+
+    Args:
+        page: The Flet page.
+        user: The current user.
+        on_open_project: Callback function when a project is opened/selected.
+                         It should accept the project_id as a string.
+    """
 
     pm = ProjectManager()
 
@@ -105,6 +117,11 @@ def PMScreen(page: ft.Page, user: User) -> ft.Control:
                                             ft.TextButton(
                                                 "View Details",
                                                 style=ft.ButtonStyle(padding=5),
+                                                on_click=lambda _, pid=project.id: (
+                                                    on_open_project(pid)
+                                                    if on_open_project
+                                                    else None
+                                                ),
                                             ),
                                         ],
                                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,

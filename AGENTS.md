@@ -5,9 +5,11 @@ This document provides essential context, commands, and conventions for AI agent
 ## 1. Project Overview
 
 SysEngn (System Engine) is an integrated platform combining project management, systems engineering, collaboration, document management, and UX design.
+**The application is built using [Flet](https://flet.dev/) for the user interface.**
 
 - **Stack:** Python 3.12+
-- **Dependency Manager:** `uv` (preferred) or `pip`
+- **UI Framework:** Flet
+- **Dependency Manager:** `uv` (Exclusive)
 - **Linter/Formatter:** `ruff`
 - **Type Checker:** `pyright`
 - **Testing:** `pytest`
@@ -15,15 +17,12 @@ SysEngn (System Engine) is an integrated platform combining project management, 
 
 ## 2. Environment & Commands
 
-The project uses `pyproject.toml` for configuration.
+The project uses `pyproject.toml` for configuration. Always use `uv` for dependency management and running commands.
 
 ### Setup
 ```bash
-# Install dependencies using uv (fastest)
+# Install dependencies
 uv sync
-
-# OR using pip
-pip install -e ".[dev]"
 ```
 
 ### Verification & Quality Control
@@ -31,22 +30,22 @@ Run these commands before submitting any changes.
 
 ```bash
 # Run all tests
-pytest
+uv run pytest
 
 # Run a specific test file
-pytest tests/test_core.py
+uv run pytest tests/sysengn/test_main.py
 
 # Run a specific test case (CRITICAL for focused development)
-pytest tests/test_core.py::test_initialization
+uv run pytest tests/sysengn/test_main.py::test_initialization
 
 # Linting (fixable errors)
-ruff check . --fix
+uv run ruff check . --fix
 
 # Formatting
-ruff format .
+uv run ruff format .
 
 # Type Checking
-pyright .
+uv run pyright .
 ```
 
 ## 3. Code Style & Conventions
@@ -56,10 +55,10 @@ Adhere strictly to these rules to maintain codebase consistency.
 ### 3.1 Python Version & Features
 - Target **Python 3.12+**.
 - Use modern typing syntax (e.g., `list[str]` instead of `List[str]`, `str | None` instead of `Optional[str]`).
-- specific imports are preferred over `*`.
+- Specific imports are preferred over `*`.
 
 ### 3.2 Imports
-- Absolute imports are preferred for clarity (e.g., `from sysengn.core import System`).
+- Absolute imports are preferred for clarity (e.g., `from sysengn.auth import User`).
 - Group imports: standard library, third-party, local application (Ruff handles this).
 - Avoid circular imports by using `TYPE_CHECKING` blocks for type-only dependencies.
 
@@ -124,31 +123,32 @@ except FileNotFoundError as e:
 
 ## 4. Testing Guidelines
 
-- **Unit Tests:** Focus on isolating logic. Mock external dependencies (filesystem, network).
+- **Unit Tests:** Focus on isolating logic. Mock external dependencies (filesystem, network, database).
 - **Fixtures:** Use `conftest.py` for shared fixtures (e.g., sample project data, temporary directories).
 - **Coverage:** Aim for high coverage on core logic.
 - **Async:** If testing async code, use `pytest-asyncio`.
 
 ```python
-# tests/test_manager.py
+# tests/sysengn/test_project_manager.py
 import pytest
-from sysengn.manager import ProjectManager
+from sysengn.project_manager import ProjectManager
 
 @pytest.fixture
 def empty_manager():
     return ProjectManager()
 
-def test_add_document(empty_manager):
-    doc_id = empty_manager.add_document("Design Spec", "content...")
-    assert doc_id is not None
-    assert empty_manager.get_document(doc_id).title == "Design Spec"
+def test_add_project(empty_manager):
+    proj_id = empty_manager.create_project("New App", "Description")
+    assert proj_id is not None
+    assert empty_manager.get_project(proj_id).name == "New App"
 ```
 
-## 5. Documentation
+## 5. Flet UI Guidelines
 
-- Update `README.md` for high-level changes.
-- Ensure docstrings are updated when function signatures change.
-- Use Markdown for all documentation files.
+- **Components:** Break complex UIs into smaller, reusable `ft.UserControl` or functional components.
+- **State:** Manage state carefully. Use `page.session` for user session data.
+- **Responsiveness:** Use `ft.Row`, `ft.Column`, and `expand=True` to create responsive layouts.
+- **Theming:** Respect `page.theme_mode`. Use standard colors (e.g., `ft.Colors.BLUE`, `ft.Colors.GREY_800`) to ensure dark/light mode compatibility.
 
 ## 6. Agent Behavior Rules
 

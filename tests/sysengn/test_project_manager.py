@@ -1,6 +1,6 @@
 import pytest
 import sqlite3
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from datetime import datetime
 from sysengn.project_manager import ProjectManager
 
@@ -65,3 +65,59 @@ def test_get_all_projects_db_error(project_manager):
         # Should catch error and return empty list
         projects = project_manager.get_all_projects()
         assert projects == []
+
+
+@patch("sysengn.project_manager.get_connection")
+def test_get_project_found(mock_get_conn):
+    """Test retrieving a specific project."""
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_get_conn.return_value = mock_conn
+    mock_conn.cursor.return_value = mock_cursor
+
+    # Mock DB row
+    now = datetime.now()
+    mock_cursor.fetchone.return_value = {
+        "id": "123",
+        "name": "Test Project",
+        "description": "Desc",
+        "status": "Active",
+        "owner_id": "u1",
+        "created_at": now.isoformat(),
+        "updated_at": now.isoformat(),
+    }
+
+    pm = ProjectManager()
+    project = pm.get_project("123")
+
+    assert project is not None
+    assert project.id == "123"
+    assert project.name == "Test Project"
+    assert isinstance(project.created_at, datetime)
+
+
+@patch("sysengn.project_manager.get_connection")
+def test_get_project_not_found(mock_get_conn):
+    """Test retrieving a non-existent project."""
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_get_conn.return_value = mock_conn
+    mock_conn.cursor.return_value = mock_cursor
+
+    mock_cursor.fetchone.return_value = None
+
+    pm = ProjectManager()
+    project = pm.get_project("999")
+
+    assert project is None
+
+
+@patch("sysengn.project_manager.get_connection")
+def test_get_project_db_error(mock_get_conn):
+    """Test database error handling during get_project."""
+    mock_get_conn.side_effect = sqlite3.Error("DB Error")
+
+    pm = ProjectManager()
+    project = pm.get_project("123")
+
+    assert project is None

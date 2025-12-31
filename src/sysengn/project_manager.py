@@ -131,3 +131,49 @@ class ProjectManager:
         finally:
             if conn:
                 conn.close()
+
+    def get_project(self, project_id: str) -> Optional[Project]:
+        """Retrieves a specific project by ID.
+
+        Args:
+            project_id: The ID of the project to retrieve.
+
+        Returns:
+            The Project object if found, otherwise None.
+        """
+        conn = None
+        try:
+            conn = get_connection(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
+            row = cursor.fetchone()
+
+            if not row:
+                return None
+
+            # Helper to parse datetime safely (similar to get_all_projects)
+            def parse_dt(dt_val):
+                if isinstance(dt_val, str):
+                    try:
+                        return datetime.fromisoformat(dt_val)
+                    except ValueError:
+                        return datetime.now()
+                elif isinstance(dt_val, datetime):
+                    return dt_val
+                return datetime.now()
+
+            return Project(
+                id=row["id"],
+                name=row["name"],
+                description=row["description"],
+                status=row["status"],
+                owner_id=row["owner_id"],
+                created_at=parse_dt(row["created_at"]),
+                updated_at=parse_dt(row["updated_at"]),
+            )
+        except sqlite3.Error as e:
+            logger.error(f"Error fetching project {project_id}: {e}")
+            return None
+        finally:
+            if conn:
+                conn.close()
