@@ -121,6 +121,10 @@ def login_page(page: ft.Page, allow_passwords: bool = False) -> None:
                 )
                 page.update()
 
+        # Add on_submit event handler to both fields
+        email_field.on_submit = handle_local_login
+        password_field.on_submit = handle_local_login
+
         content.extend(
             [
                 ft.Divider(),
