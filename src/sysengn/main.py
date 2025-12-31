@@ -91,6 +91,7 @@ def login_page(page: ft.Page, allow_passwords: bool = False) -> None:
         pass
 
     content: list[ft.Control] = [
+        ft.Image(src="sysengn_splash.png", width=300),
         ft.Text("Welcome to SysEngn", size=30, weight=ft.FontWeight.BOLD),
         ft.Text("Please sign in to continue", size=16),
         ft.Divider(),
@@ -288,7 +289,6 @@ def main_page(page: ft.Page) -> None:
 
         left_section = ft.Row(
             controls=[
-                ft.Icon(ft.Icons.TERMINAL, size=24, color=ft.Colors.BLUE_200),
                 ft.TextButton(
                     content=ft.Text(
                         "SysEngn",
@@ -552,10 +552,19 @@ def main() -> None:
         # Set default theme mode to DARK for login screen
         page.theme_mode = ft.ThemeMode.DARK
 
+        # Enable window resizing and maximizing
+        page.window.resizable = True   # Must be True for maximize to work
+        page.window.maximizable = True # Enables the maximize button
+        page.window.minimizable = True # Enables the minimize button
+
         page.session.set("allow_passwords", args.allow_passwords)  # type: ignore
         login_page(page, allow_passwords=args.allow_passwords)
 
     view = ft.AppView.WEB_BROWSER if args.web else ft.AppView.FLET_APP
+
+    # Ensure assets directory is correctly resolved relative to this script
+    assets_dir = os.path.join(os.path.dirname(__file__), "assets")
+
     # We need to set a secret key for session/auth to work securely
     # ft.app(target=app_main, view=view, secret_key=os.getenv("APP_SECRET_KEY", "dev_secret_key"))
     # In 0.25.2 secret_key might not be in ft.app arguments directly?
@@ -565,7 +574,7 @@ def main() -> None:
     ft.app(
         target=app_main,
         view=view,
-        assets_dir="assets",
+        assets_dir=assets_dir,
     )
 
 

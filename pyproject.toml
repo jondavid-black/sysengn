@@ -53,21 +53,11 @@ exclude_lines = [
     "@(abc\\.)?abstractmethod",
 ]
 
-# [tool.flet]
-# # This tells Flet where your application code lives
-# path = "src/sysengn"
+[tool.flet]
+product_name = "SysEngn"
+description = "Digital Workspace for Building Digital Systems"
+path = "src/sysengn"
 
-# [tool.flet.assets]
-# # This points to the folder inside 'src'
-# path = "assets"
-
-# [tool.flet.splash]
-# # Customize the look and feel
-# color = "#FFFFFF"
-# dark_color = "#111111"
-
-# # You can also point to specific files for different platforms
-# # Flet will look for these inside your src/assets folder
-# # android_path = "splash_android.png"
-# # ios_path = "splash_ios.png"
-# web_path = "sysengn_logo.png"
+[tool.flet.assets]
+# This points to the folder inside 'src/sysengn'
+path = "assets"
