@@ -1,6 +1,4 @@
-import sqlite3
 import pytest
-from pathlib import Path
 from sysengn.db.database import init_db, get_connection
 from sysengn.data.manager import DataManager
 

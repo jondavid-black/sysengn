@@ -111,7 +111,7 @@ def main_page(page: ft.Page) -> None:
             # We can iterate page controls to find banner but that's messy.
             # Let's rely on re-render or just switch tab.
 
-            change_tab(1)  # Switch to SE tab
+            change_tab(2)  # Switch to SE tab
 
         return PMScreen(page, user, on_open_project=open_project)
 
@@ -152,8 +152,8 @@ def main_page(page: ft.Page) -> None:
                 # If currently on SE screen, we might want to refresh content area
                 # A simple way is to re-trigger change_tab with current index
                 current_tab_idx = tabs.selected_index
-                if current_tab_idx == 1:  # SE Tab
-                    change_tab(1)
+                if current_tab_idx == 2:  # SE Tab
+                    change_tab(2)
 
         project_dropdown = ft.Dropdown(
             width=200,
@@ -190,18 +190,11 @@ def main_page(page: ft.Page) -> None:
 
         left_section = ft.Row(
             controls=[
-                ft.TextButton(
-                    content=ft.Text(
-                        "SysEngn",
-                        size=20,
-                        weight=ft.FontWeight.BOLD,
-                        color=ft.Colors.WHITE,
-                    ),
-                    on_click=lambda _: change_tab(-1),  # -1 for Home
-                    style=ft.ButtonStyle(
-                        overlay_color=ft.Colors.TRANSPARENT,
-                        padding=0,
-                    ),
+                ft.Image(
+                    src="icons/sysengn_logo_core_tiny.png",
+                    width=32,
+                    height=32,
+                    tooltip="SysEngn",
                 ),
                 ft.Container(width=10),
                 project_dropdown,
@@ -221,6 +214,7 @@ def main_page(page: ft.Page) -> None:
             unselected_label_color=ft.Colors.GREY_400,
             divider_color="transparent",
             tabs=[
+                ft.Tab(icon=ft.Icons.HOME, text="Home"),
                 ft.Tab(text="PM"),
                 ft.Tab(text="SE"),
                 ft.Tab(text="Team"),
@@ -343,22 +337,23 @@ def main_page(page: ft.Page) -> None:
     tabs_ref: list[ft.Tabs] = []
 
     def change_tab(index: int):
-        # Update tab selection only if it's one of the main tabs (0, 1, 2)
+        # Update tab selection only if it's one of the main tabs (0, 1, 2, 3)
         if index >= 0 and tabs_ref:
             tabs_control = tabs_ref[0]
             tabs_control.selected_index = index
-            tabs_control.update()
+            if tabs_control.page:
+                tabs_control.update()
         else:
             # If going home (-1), just skip tab update
             pass
 
-        if index == -1:
+        if index == 0:
             content_area.content = get_mock_home_screen()
-        elif index == 0:
-            content_area.content = get_mock_pm_screen()
         elif index == 1:
-            content_area.content = get_mock_se_screen()
+            content_area.content = get_mock_pm_screen()
         elif index == 2:
+            content_area.content = get_mock_se_screen()
+        elif index == 3:
             content_area.content = get_mock_team_screen()
 
         if content_area.page:
@@ -367,7 +362,7 @@ def main_page(page: ft.Page) -> None:
     banner, tabs_control = build_banner(page, user, change_tab)
     tabs_ref.append(tabs_control)
 
-    change_tab(-1)  # Initialize with Home Screen
+    change_tab(0)  # Initialize with Home Screen
 
     page.clean()
     page.add(
