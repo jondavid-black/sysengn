@@ -120,6 +120,11 @@ def main_page(page: ft.Page) -> None:
 
         return SEScreen(page, user)
 
+    def get_mock_docs_screen() -> ft.Control:
+        from sysengn.ui.docs.docs_screen import DocsScreen
+
+        return DocsScreen(page, user)
+
     def get_mock_team_screen() -> ft.Control:
         from sysengn.ui.team.team_screen import TeamScreen
 
@@ -196,6 +201,7 @@ def main_page(page: ft.Page) -> None:
             border_radius=5,
         )
 
+        # Left: Icon, Name, Project Dropdown, Workspace Dropdown
         left_section = ft.Row(
             controls=[
                 ft.Container(
@@ -228,23 +234,7 @@ def main_page(page: ft.Page) -> None:
                 ft.Tab(text="Home"),
                 ft.Tab(text="PM"),
                 ft.Tab(text="SE"),
-                ft.Tab(text="Team"),
-            ],
-            on_change=lambda e: on_tab_change(e.control.selected_index),
-        )
-
-        # Center: Tabs
-        tabs = ft.Tabs(
-            selected_index=0,
-            animation_duration=300,
-            indicator_color=ft.Colors.BLUE_200,
-            label_color=ft.Colors.BLUE_200,
-            unselected_label_color=ft.Colors.GREY_400,
-            divider_color="transparent",
-            tabs=[
-                ft.Tab(text="Home"),
-                ft.Tab(text="PM"),
-                ft.Tab(text="SE"),
+                ft.Tab(text="Docs"),
                 ft.Tab(text="Team"),
             ],
             on_change=lambda e: on_tab_change(e.control.selected_index),
@@ -422,8 +412,10 @@ def main_page(page: ft.Page) -> None:
         elif index == 2:
             content_area.content = get_mock_se_screen()
         elif index == 3:
-            content_area.content = get_mock_team_screen()
+            content_area.content = get_mock_docs_screen()
         elif index == 4:
+            content_area.content = get_mock_team_screen()
+        elif index == 5:
             content_area.content = get_user_profile_screen()
 
         if content_area.page:
