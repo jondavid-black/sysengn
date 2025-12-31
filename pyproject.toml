@@ -10,7 +10,8 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "advanced-yaml>=0.4.4",
-    "flet[all]>=0.80.0",
+    "bcrypt>=5.0.0",
+    "flet[all]==0.25.2",
 ]
 
 [project.scripts]
@@ -29,6 +30,7 @@ dev = [
 [tool.pytest.ini_options]
 addopts = "--cov=sysengn --cov-report=term-missing"
 testpaths = ["tests"]
+pythonpath = ["src"]
 
 [tool.coverage.run]
 source = ["src/sysengn"]
