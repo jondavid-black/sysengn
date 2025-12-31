@@ -73,7 +73,7 @@ def login_page(page: ft.Page, allow_passwords: bool = False) -> None:
 
         login_buttons.append(
             ft.ElevatedButton(
-                text=f"Login with {name}",
+                content=ft.Text(f"Login with {name}"),
                 on_click=lambda _, p=provider: handle_login_button(p),
                 disabled=True,  # Disabled for now
             )
@@ -121,7 +121,9 @@ def login_page(page: ft.Page, allow_passwords: bool = False) -> None:
                 ft.Text("Or sign in with email", size=14),
                 email_field,
                 password_field,
-                ft.ElevatedButton(text="Sign In", on_click=handle_local_login),
+                ft.ElevatedButton(
+                    content=ft.Text("Sign In"), on_click=handle_local_login
+                ),
             ]
         )
 
@@ -164,27 +166,199 @@ def main_page(page: ft.Page) -> None:
 
     page.title = "SysEngn"
 
-    actions: list[ft.Control] = [
-        ft.IconButton(ft.Icons.LOGOUT, on_click=lambda e: logout(page))
-    ]
-    if user.has_role(Role.ADMIN):
-        actions.insert(
-            0,
-            ft.IconButton(
-                ft.Icons.ADMIN_PANEL_SETTINGS,
-                tooltip="Admin Panel",
-                on_click=lambda e: admin_page(page),
+    # -- New Banner & Layout Logic --
+
+    # Mock Screens
+    def get_mock_pm_screen() -> ft.Control:
+        from sysengn.pm_screen import PMScreen
+
+        return PMScreen(page, user)
+
+    def get_mock_se_screen() -> ft.Control:
+        return ft.Container(
+            content=ft.Text("Mock SE Screen", size=30, weight=ft.FontWeight.BOLD),
+            alignment=ft.Alignment(0, 0),
+            expand=True,
+        )
+
+    def get_mock_team_screen() -> ft.Control:
+        return ft.Container(
+            content=ft.Text("Mock Team Screen", size=30, weight=ft.FontWeight.BOLD),
+            alignment=ft.Alignment(0, 0),
+            expand=True,
+        )
+
+    def build_banner(page: ft.Page, user: User, on_tab_change) -> ft.Control:
+        # Left: Icon, Name, Workspace Dropdown
+        workspace_dropdown = ft.Dropdown(
+            width=200,
+            text_size=14,
+            content_padding=ft.padding.symmetric(horizontal=10, vertical=0),
+            value="main",
+            options=[
+                ft.dropdown.Option("main"),
+                ft.dropdown.Option("dev"),
+                ft.dropdown.Option("test"),
+                ft.dropdown.Option("+ Add New Workspace"),
+            ],
+            border_color=ft.Colors.TRANSPARENT,
+            bgcolor=ft.Colors.GREY_800,
+            color=ft.Colors.WHITE,
+            border_radius=5,
+        )
+
+        left_section = ft.Row(
+            controls=[
+                ft.Icon(ft.Icons.TERMINAL, size=24, color=ft.Colors.BLUE_200),
+                ft.Text(
+                    "SysEngn", size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE
+                ),
+                ft.Container(width=10),
+                workspace_dropdown,
+            ],
+            alignment=ft.MainAxisAlignment.START,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        )
+
+        # Center: Tabs
+        tabs = ft.Tabs(
+            selected_index=0,
+            animation_duration=300,
+            indicator_color=ft.Colors.BLUE_200,
+            label_color=ft.Colors.BLUE_200,
+            unselected_label_color=ft.Colors.GREY_400,
+            divider_color="transparent",
+            tabs=[
+                ft.Tab(text="PM"),
+                ft.Tab(text="SE"),
+                ft.Tab(text="Team"),
+            ],
+            on_change=lambda e: on_tab_change(e.control.selected_index),
+        )
+
+        # Right: Search, Theme Toggle, Avatar
+        search_box = ft.TextField(
+            hint_text="Search...",
+            height=40,
+            text_size=14,
+            content_padding=ft.padding.only(left=10, bottom=10),
+            width=200,
+            border_radius=20,
+            prefix_icon=ft.Icons.SEARCH,
+            bgcolor=ft.Colors.GREY_800,
+            border_color=ft.Colors.TRANSPARENT,
+            color=ft.Colors.WHITE,
+            hint_style=ft.TextStyle(color=ft.Colors.GREY_500),
+        )
+
+        def toggle_theme(e):
+            page.theme_mode = (
+                ft.ThemeMode.LIGHT
+                if page.theme_mode == ft.ThemeMode.DARK
+                else ft.ThemeMode.DARK
+            )
+            e.control.icon = (
+                ft.Icons.DARK_MODE
+                if page.theme_mode == ft.ThemeMode.LIGHT
+                else ft.Icons.LIGHT_MODE
+            )
+            page.update()
+
+        theme_icon = ft.IconButton(
+            ft.Icons.DARK_MODE,
+            on_click=toggle_theme,
+            tooltip="Toggle Dark Mode",
+            icon_color=ft.Colors.GREY_400,
+        )
+
+        user_initials = user.name[0].upper() if user.name else user.email[0].upper()
+        avatar = ft.CircleAvatar(
+            content=ft.Text(user_initials, color=ft.Colors.WHITE),
+            bgcolor=ft.Colors.BLUE,
+            tooltip=f"{user.name or user.email}",
+        )
+
+        # Avatar Menu (Logout, Admin)
+        avatar_menu = ft.PopupMenuButton(
+            content=avatar,
+            items=[
+                item
+                for item in [
+                    ft.PopupMenuItem(
+                        text="Admin Panel",
+                        icon=ft.Icons.ADMIN_PANEL_SETTINGS,
+                        on_click=lambda e: admin_page(page),
+                    )
+                    if user.has_role(Role.ADMIN)
+                    else None,  # type: ignore
+                    ft.PopupMenuItem(
+                        text="Logout",
+                        icon=ft.Icons.LOGOUT,
+                        on_click=lambda e: logout(page),
+                    ),
+                ]
+                if item is not None
+            ],
+        )
+
+        right_section = ft.Row(
+            controls=[
+                search_box,
+                ft.Container(width=10),
+                theme_icon,
+                ft.Container(width=10),
+                avatar_menu,
+            ],
+            alignment=ft.MainAxisAlignment.END,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        )
+
+        banner_row = ft.Row(
+            controls=[left_section, tabs, right_section],
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            expand=True,
+        )
+
+        return ft.Container(
+            content=banner_row,
+            padding=ft.padding.symmetric(horizontal=20, vertical=10),
+            bgcolor="#36454F",  # Charcoal
+            shadow=ft.BoxShadow(
+                spread_radius=1,
+                blur_radius=5,
+                color=ft.Colors.BLACK12,
+                offset=ft.Offset(0, 2),
             ),
         )
 
-    page.appbar = ft.AppBar(
-        title=ft.Text("SysEngn"),
-        actions=actions,
-    )
+    # Setup Page Layout
+    page.padding = 0
+    page.appbar = None  # Remove default AppBar
 
-    page.add(ft.Text(value=get_greeting(), size=30))
-    if hasattr(user, "email"):
-        page.add(ft.Text(f"Logged in as: {user.email}"))
+    content_area = ft.Container(expand=True, padding=20)
+
+    def change_tab(index: int):
+        if index == 0:
+            content_area.content = get_mock_pm_screen()
+        elif index == 1:
+            content_area.content = get_mock_se_screen()
+        elif index == 2:
+            content_area.content = get_mock_team_screen()
+        if content_area.page:
+            content_area.update()
+
+    banner = build_banner(page, user, change_tab)
+    change_tab(0)  # Initialize
+
+    page.clean()
+    page.add(
+        ft.Column(
+            controls=[banner, content_area],
+            expand=True,
+            spacing=0,
+        )
+    )
 
 
 def admin_page(page: ft.Page) -> None:
@@ -213,9 +387,9 @@ def admin_page(page: ft.Page) -> None:
                 ft.Text("Welcome, Administrator.", size=16),
                 ft.Container(
                     content=ft.Text(
-                        "Sensitive System Settings (Mock)", color=ft.colors.WHITE
+                        "Sensitive System Settings (Mock)", color=ft.Colors.WHITE
                     ),
-                    bgcolor=ft.colors.RED_900,
+                    bgcolor=ft.Colors.RED_900,
                     padding=20,
                     border_radius=10,
                 ),
