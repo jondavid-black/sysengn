@@ -28,6 +28,7 @@ class User:
     email: str
     name: str | None = None
     roles: list[Role] = field(default_factory=list)
+    theme_preference: str = "DARK"
 
     def has_role(self, role: Role) -> bool:
         """Checks if the user has a specific role."""
@@ -83,7 +84,7 @@ def authenticate_local_user(email: str, password: str) -> User | None:
     try:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT id, email, name, password_hash, roles FROM users WHERE email = ?",
+            "SELECT id, email, name, password_hash, roles, theme_preference FROM users WHERE email = ?",
             (email,),
         )
         row = cursor.fetchone()
@@ -120,6 +121,7 @@ def authenticate_local_user(email: str, password: str) -> User | None:
                 email=row["email"],
                 name=row["name"],
                 roles=roles,
+                theme_preference=row["theme_preference"] or "DARK",
             )
     except Exception as e:
         logger.error(f"Authentication error: {e}")
@@ -127,6 +129,22 @@ def authenticate_local_user(email: str, password: str) -> User | None:
         conn.close()
 
     return None
+
+
+def update_user_theme_preference(user_id: str, theme_mode: str) -> None:
+    """Updates the user's theme preference in the database."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE users SET theme_preference = ? WHERE id = ?",
+            (theme_mode, user_id),
+        )
+        conn.commit()
+    except Exception as e:
+        logger.error(f"Error updating theme preference: {e}")
+    finally:
+        conn.close()
 
 
 def create_user(
@@ -147,14 +165,16 @@ def create_user(
         cursor = conn.cursor()
         cursor.execute(
             """
-            INSERT INTO users (id, email, name, password_hash, roles)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO users (id, email, name, password_hash, roles, theme_preference)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (user_id, email, name, password_hash, role_names),
+            (user_id, email, name, password_hash, role_names, "DARK"),
         )
         conn.commit()
 
-        return User(id=user_id, email=email, name=name, roles=roles)
+        return User(
+            id=user_id, email=email, name=name, roles=roles, theme_preference="DARK"
+        )
     except Exception as e:
         logger.error(f"Error creating user: {e}")
         raise

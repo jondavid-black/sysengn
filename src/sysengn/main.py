@@ -2,7 +2,13 @@ import argparse
 import os
 import flet as ft
 
-from sysengn.auth import User, get_oauth_providers, authenticate_local_user, Role
+from sysengn.auth import (
+    User,
+    get_oauth_providers,
+    authenticate_local_user,
+    Role,
+    update_user_theme_preference,
+)
 
 
 def load_env_file(filepath: str = ".env") -> None:
@@ -155,6 +161,7 @@ def main_page(page: ft.Page) -> None:
             email=page.auth.user.email if page.auth.user.email else "unknown",  # type: ignore
             name=page.auth.user.name,  # type: ignore
             roles=[Role.USER],  # Default role
+            theme_preference="DARK",  # Default for oauth user until we fetch from DB
         )
         page.session.set("user", user)  # type: ignore
 
@@ -165,6 +172,13 @@ def main_page(page: ft.Page) -> None:
         return
 
     page.title = "SysEngn"
+
+    # Set theme based on user preference
+    if user.theme_preference == "LIGHT":
+        page.theme_mode = ft.ThemeMode.LIGHT
+    else:
+        page.theme_mode = ft.ThemeMode.DARK
+    page.update()
 
     # -- New Banner & Layout Logic --
 
@@ -252,11 +266,12 @@ def main_page(page: ft.Page) -> None:
         )
 
         def toggle_theme(e):
-            page.theme_mode = (
+            new_mode = (
                 ft.ThemeMode.LIGHT
                 if page.theme_mode == ft.ThemeMode.DARK
                 else ft.ThemeMode.DARK
             )
+            page.theme_mode = new_mode
             e.control.icon = (
                 ft.Icons.DARK_MODE
                 if page.theme_mode == ft.ThemeMode.LIGHT
@@ -264,8 +279,16 @@ def main_page(page: ft.Page) -> None:
             )
             page.update()
 
+            # Update preference in DB and session
+            user.theme_preference = (
+                "LIGHT" if new_mode == ft.ThemeMode.LIGHT else "DARK"
+            )
+            update_user_theme_preference(user.id, user.theme_preference)
+
         theme_icon = ft.IconButton(
-            ft.Icons.DARK_MODE,
+            ft.Icons.DARK_MODE
+            if page.theme_mode == ft.ThemeMode.LIGHT
+            else ft.Icons.LIGHT_MODE,
             on_click=toggle_theme,
             tooltip="Toggle Dark Mode",
             icon_color=ft.Colors.GREY_400,
@@ -432,8 +455,8 @@ def main() -> None:
 
         init_db()
 
-        # Set theme mode to system default
-        page.theme_mode = ft.ThemeMode.SYSTEM
+        # Set default theme mode to DARK for login screen
+        page.theme_mode = ft.ThemeMode.DARK
 
         page.session.set("allow_passwords", args.allow_passwords)  # type: ignore
         login_page(page, allow_passwords=args.allow_passwords)
