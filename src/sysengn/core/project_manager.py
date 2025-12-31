@@ -5,7 +5,7 @@ from typing import Optional, List
 import logging
 
 from sysengn.db.database import get_connection
-from sysengn.models import Project
+from sysengn.data.models import Project
 
 logger = logging.getLogger(__name__)
 

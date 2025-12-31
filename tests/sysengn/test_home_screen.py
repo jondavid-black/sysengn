@@ -1,7 +1,7 @@
 import flet as ft
 from unittest.mock import MagicMock
-from sysengn.home_screen import HomeScreen
-from sysengn.auth import User
+from sysengn.ui.home_screen import HomeScreen
+from sysengn.core.auth import User
 
 
 def test_home_screen_structure():

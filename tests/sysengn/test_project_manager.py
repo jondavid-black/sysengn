@@ -2,7 +2,7 @@ import pytest
 import sqlite3
 from unittest.mock import MagicMock, patch
 from datetime import datetime
-from sysengn.project_manager import ProjectManager
+from sysengn.core.project_manager import ProjectManager
 
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def test_get_all_projects(project_manager):
 
 def test_create_project_db_error(project_manager):
     # Mock connection to raise error
-    with patch("sysengn.project_manager.get_connection") as mock_conn:
+    with patch("sysengn.core.project_manager.get_connection") as mock_conn:
         mock_conn.side_effect = sqlite3.Error("DB Error")
 
         with pytest.raises(sqlite3.Error):
@@ -59,7 +59,7 @@ def test_create_project_db_error(project_manager):
 
 
 def test_get_all_projects_db_error(project_manager):
-    with patch("sysengn.project_manager.get_connection") as mock_conn:
+    with patch("sysengn.core.project_manager.get_connection") as mock_conn:
         mock_conn.side_effect = sqlite3.Error("DB Error")
 
         # Should catch error and return empty list
@@ -67,7 +67,7 @@ def test_get_all_projects_db_error(project_manager):
         assert projects == []
 
 
-@patch("sysengn.project_manager.get_connection")
+@patch("sysengn.core.project_manager.get_connection")
 def test_get_project_found(mock_get_conn):
     """Test retrieving a specific project."""
     mock_conn = MagicMock()
@@ -96,7 +96,7 @@ def test_get_project_found(mock_get_conn):
     assert isinstance(project.created_at, datetime)
 
 
-@patch("sysengn.project_manager.get_connection")
+@patch("sysengn.core.project_manager.get_connection")
 def test_get_project_not_found(mock_get_conn):
     """Test retrieving a non-existent project."""
     mock_conn = MagicMock()
@@ -112,7 +112,7 @@ def test_get_project_not_found(mock_get_conn):
     assert project is None
 
 
-@patch("sysengn.project_manager.get_connection")
+@patch("sysengn.core.project_manager.get_connection")
 def test_get_project_db_error(mock_get_conn):
     """Test database error handling during get_project."""
     mock_get_conn.side_effect = sqlite3.Error("DB Error")

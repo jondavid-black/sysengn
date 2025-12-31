@@ -1,12 +1,12 @@
 import flet as ft
 from unittest.mock import MagicMock, patch
-from sysengn.pm_screen import PMScreen
-from sysengn.auth import User
-from sysengn.models import Project
+from sysengn.ui.pm.pm_screen import PMScreen
+from sysengn.core.auth import User
+from sysengn.data.models import Project
 from datetime import datetime
 
 
-@patch("sysengn.pm_screen.ProjectManager")
+@patch("sysengn.ui.pm.pm_screen.ProjectManager")
 def test_pm_screen_empty(mock_pm_cls):
     """Verify PMScreen empty state."""
     mock_pm = mock_pm_cls.return_value
@@ -41,7 +41,7 @@ def test_pm_screen_empty(mock_pm_cls):
     ]
 
 
-@patch("sysengn.pm_screen.ProjectManager")
+@patch("sysengn.ui.pm.pm_screen.ProjectManager")
 def test_pm_screen_with_projects(mock_pm_cls):
     """Verify PMScreen with projects."""
     mock_pm = mock_pm_cls.return_value
@@ -101,7 +101,7 @@ def test_pm_screen_with_projects(mock_pm_cls):
     assert name_text.value == "Project A"
 
 
-@patch("sysengn.pm_screen.ProjectManager")
+@patch("sysengn.ui.pm.pm_screen.ProjectManager")
 def test_create_project_flow(mock_pm_cls):
     """Verify create project dialog flow."""
     mock_pm = mock_pm_cls.return_value

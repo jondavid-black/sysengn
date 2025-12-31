@@ -1,12 +1,12 @@
 import flet as ft
 from unittest.mock import MagicMock, patch
 from datetime import datetime
-from sysengn.se_screen import SEScreen
-from sysengn.auth import User
-from sysengn.models import Project
+from sysengn.ui.se.se_screen import SEScreen
+from sysengn.core.auth import User
+from sysengn.data.models import Project
 
 
-@patch("sysengn.se_screen.ProjectManager")
+@patch("sysengn.ui.se.se_screen.ProjectManager")
 def test_se_screen_no_project(mock_pm_cls):
     """Verify SEScreen state when no project is selected."""
     mock_page = MagicMock(spec=ft.Page)
@@ -28,7 +28,7 @@ def test_se_screen_no_project(mock_pm_cls):
     assert "No Project Selected" in texts
 
 
-@patch("sysengn.se_screen.ProjectManager")
+@patch("sysengn.ui.se.se_screen.ProjectManager")
 def test_se_screen_with_project(mock_pm_cls):
     """Verify SEScreen when a project is selected."""
     mock_pm = mock_pm_cls.return_value
@@ -79,7 +79,7 @@ def test_se_screen_with_project(mock_pm_cls):
     assert tabs.tabs[2].text == "Components"
 
 
-@patch("sysengn.se_screen.ProjectManager")
+@patch("sysengn.ui.se.se_screen.ProjectManager")
 def test_se_screen_project_not_found(mock_pm_cls):
     """Verify SEScreen when session ID exists but project DB returns None."""
     mock_pm = mock_pm_cls.return_value

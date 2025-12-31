@@ -1,6 +1,6 @@
 import flet as ft
-from sysengn.auth import User
-from sysengn.project_manager import ProjectManager
+from sysengn.core.auth import User
+from sysengn.core.project_manager import ProjectManager
 
 
 def SEScreen(page: ft.Page, user: User) -> ft.Control:

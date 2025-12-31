@@ -1,7 +1,7 @@
 import pytest
 import os
 from unittest.mock import patch
-from sysengn.auth import (
+from sysengn.core.auth import (
     User,
     Role,
     get_oauth_providers,

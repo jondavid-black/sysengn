@@ -2,7 +2,7 @@ import argparse
 import os
 import flet as ft
 
-from sysengn.auth import (
+from sysengn.core.auth import (
     User,
     get_oauth_providers,
     authenticate_local_user,
@@ -188,12 +188,12 @@ def main_page(page: ft.Page) -> None:
 
     # Mock Screens
     def get_mock_home_screen() -> ft.Control:
-        from sysengn.home_screen import HomeScreen
+        from sysengn.ui.home_screen import HomeScreen
 
         return HomeScreen(page, user)
 
     def get_mock_pm_screen() -> ft.Control:
-        from sysengn.pm_screen import PMScreen
+        from sysengn.ui.pm.pm_screen import PMScreen
 
         def open_project(project_id: str):
             # Set active project
@@ -214,16 +214,14 @@ def main_page(page: ft.Page) -> None:
         return PMScreen(page, user, on_open_project=open_project)
 
     def get_mock_se_screen() -> ft.Control:
-        from sysengn.se_screen import SEScreen
+        from sysengn.ui.se.se_screen import SEScreen
 
         return SEScreen(page, user)
 
     def get_mock_team_screen() -> ft.Control:
-        return ft.Container(
-            content=ft.Text("Mock Team Screen", size=30, weight=ft.FontWeight.BOLD),
-            alignment=ft.Alignment(0, 0),
-            expand=True,
-        )
+        from sysengn.ui.team.team_screen import TeamScreen
+
+        return TeamScreen(page, user)
 
     def build_banner(
         page: ft.Page, user: User, on_tab_change
@@ -231,7 +229,7 @@ def main_page(page: ft.Page) -> None:
         # Left: Icon, Name, Project Dropdown, Workspace Dropdown
 
         # We need access to projects for the dropdown
-        from sysengn.project_manager import ProjectManager
+        from sysengn.core.project_manager import ProjectManager
 
         pm = ProjectManager()
         projects = pm.get_all_projects()

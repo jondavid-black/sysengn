@@ -1,5 +1,5 @@
 import flet as ft
-from sysengn.auth import User
+from sysengn.core.auth import User
 
 
 def HomeScreen(page: ft.Page, user: User) -> ft.Container:

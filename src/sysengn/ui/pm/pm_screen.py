@@ -1,6 +1,6 @@
 import flet as ft
-from sysengn.project_manager import ProjectManager
-from sysengn.auth import User
+from sysengn.core.project_manager import ProjectManager
+from sysengn.core.auth import User
 
 
 from typing import Callable, Optional
