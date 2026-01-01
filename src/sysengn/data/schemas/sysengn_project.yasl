@@ -1,0 +1,38 @@
+imports:
+  - ./sysengn_user.yasl
+definitions:
+  sysengn:
+    types:
+      project:
+        description: A SysEngn project definition.
+        properties:
+          name:
+            type: string
+            description: The name of the project.
+            presence: required
+          short_name:
+            type: string
+            description: A short name or identifier for the project.
+            str_max: 4
+            presence: required
+          description:
+            type: string
+            description: A brief description of the project.
+            presence: optional
+            default: ""
+          created_date:
+            type: datetime
+            description: The timestamp when the project was created.
+            presence: required
+          updated_at:
+            type: datetime
+            description: The timestamp when the project was last updated.
+            presence: required
+          admin_ids:
+            type: ref[user.email][]
+            description: The unique identifier of the user(s) who administer the project.
+            presence: required
+          repo_url:
+            type: url
+            description: The URL of the project's repository.
+            presence: required
