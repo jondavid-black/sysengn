@@ -1,0 +1,309 @@
+definitions:
+  sysengn:
+    types:
+      # --- Organization ---
+      Package:
+        description: A container for organizing model elements.
+        properties:
+          Id:
+            type: string
+            presence: required
+            unique: true
+          Name:
+            type: string
+            presence: required
+          Description:
+            type: string
+            presence: optional
+          Doc:
+            type: string
+            description: Extended documentation for the package.
+            presence: optional
+          Parent_Package:
+            type: ref[sysengn.Package.Id]
+            description: The parent package this package belongs to.
+            presence: optional
+
+      # --- Requirements ---
+      Requirement:
+        description: A SysML Requirement capturing a capability or constraint.
+        properties:
+          Id:
+            type: string
+            description: Unique identifier for the requirement.
+            presence: required
+            unique: true
+          Package:
+            type: ref[sysengn.Package.Id]
+            description: The package this requirement belongs to.
+            presence: optional
+          Name:
+            type: string
+            description: Short title of the requirement.
+            presence: optional
+          Doc:
+            type: string
+            description: Extended documentation for the requirement.
+            presence: optional
+          Text:
+            type: string
+            description: The textual statement of the requirement.
+            presence: required
+          Risk:
+            type: RiskLevel
+            description: Risk associated with this requirement.
+            default: Low
+          Verification_Method:
+            type: VerificationMethod
+            description: How this requirement will be verified.
+            default: Test
+          Derived_From:
+            type: ref[sysengn.Requirement.Id][]
+            description: Upstream requirements this one is derived from.
+
+      # --- Structure ---
+      Attribute:
+        description: A property defining a value for an element.
+        properties:
+          Name:
+            type: string
+            presence: required
+          Value:
+            type: any
+            description: The value (int, float, string, or physical quantity).
+            presence: required
+          Unit:
+            type: string
+            description: Optional unit string if not embedded in physical quantity.
+            presence: optional
+
+      Port:
+        description: An interaction point for a Part.
+        properties:
+          Name:
+            type: string
+            presence: required
+          Direction:
+            type: PortDirection
+            presence: required
+          Type:
+            type: string
+            description: The type of data, energy, or material flowing.
+            presence: optional
+
+      Connector:
+        description: A line of communication or flow between two points.
+        properties:
+          Name:
+             type: string
+             presence: optional
+          From_Path:
+             type: string
+             description: Path or ID of the source element.
+             presence: required
+          To_Path:
+             type: string
+             description: Path or ID of the target element.
+             presence: required
+          Flow_Type:
+             type: string
+             description: What flows across this connector.
+
+      Part:
+        description: A structural unit (System, Subsystem, Component).
+        properties:
+          Id:
+            type: string
+            presence: required
+            unique: true
+          Package:
+            type: ref[sysengn.Package.Id]
+            description: The package this part belongs to.
+            presence: optional
+          Name:
+            type: string
+            presence: required
+          Description:
+            type: string
+            presence: optional
+          Doc:
+            type: string
+            description: Extended documentation for the part.
+            presence: optional
+          # Composition
+          Sub_Parts:
+            type: ref[sysengn.Part.Id][]
+            description: Decomposed parts owned by this part.
+            presence: optional
+          Ports:
+            type: sysengn.Port[]
+            description: Interaction points on this part.
+            presence: optional
+          Connectors:
+            type: sysengn.Connector[]
+            description: Internal connections between sub-parts.
+            presence: optional
+          Attributes:
+            type: sysengn.Attribute[]
+            description: Values and properties of this part.
+            presence: optional
+          # Relationships
+          Satisfies:
+            type: ref[sysengn.Requirement.Id][]
+            description: Requirements this part satisfies.
+            presence: optional
+
+      # --- Behavior ---
+      Actor:
+        description: An external entity that interacts with the system.
+        properties:
+          Name:
+            type: string
+            presence: required
+            unique: true
+          Package:
+            type: ref[sysengn.Package.Id]
+            description: The package this actor belongs to.
+            presence: optional
+          Description:
+            type: string
+            presence: optional
+          Doc:
+            type: string
+            description: Extended documentation for the actor.
+            presence: optional
+
+      UseCase:
+        description: A specific way of using the system by selected actors.
+        properties:
+          Id:
+            type: string
+            presence: required
+            unique: true
+          Package:
+            type: ref[sysengn.Package.Id]
+            description: The package this use case belongs to.
+            presence: optional
+          Name:
+            type: string
+            presence: required
+          Doc:
+            type: string
+            description: Extended documentation for the use case.
+            presence: optional
+          Subject:
+            type: ref[sysengn.Part.Id]
+            description: The system or part under design.
+            presence: optional
+          Actors:
+            type: ref[sysengn.Actor.Name][]
+            description: Actors involved in this use case.
+            presence: optional
+          Behavior_Start:
+            type: ref[sysengn.Action.Id]
+            description: The starting action of the behavior flow defined for this use case.
+            presence: optional
+          Sub_UseCases:
+            type: ref[sysengn.UseCase.Id][]
+            description: Included or extending use cases (decomposition).
+            presence: optional
+          Satisfies:
+            type: ref[sysengn.Requirement.Id][]
+            description: Requirements this use case satisfies.
+            presence: optional
+          Preconditions:
+            type: string
+            presence: optional
+          Postconditions:
+            type: string
+            presence: optional
+
+      Action:
+        description: A fundamental unit of behavior execution.
+        properties:
+          Id:
+            type: string
+            presence: required
+            unique: true
+          Name:
+            type: string
+            presence: required
+          Kind:
+            type: ActionKind
+            description: The specific type of action or control node (e.g. Loop, Decision).
+            default: Simple
+          Description:
+            type: string
+            presence: optional
+          Doc:
+            type: string
+            description: Extended documentation for the action.
+            presence: optional
+          Inputs:
+            type: string[]
+            description: Data items required by this action.
+            presence: optional
+          Outputs:
+            type: string[]
+            description: Data items produced by this action.
+            presence: optional
+          # Structured / Nesting
+          Sub_Actions:
+            type: ref[sysengn.Action.Id][]
+            description: Nested actions, used for the body of loops or composite actions.
+            presence: optional
+          # Control Logic
+          Condition:
+            type: string
+            description: The logic for Decisions (test) or Loops (while/for condition).
+            presence: optional
+          # Relationships
+          Satisfies:
+            type: ref[sysengn.Requirement.Id][]
+            description: Requirements this action satisfies or verifies.
+            presence: optional
+
+      ControlFlow:
+        description: A sequence dependency between actions.
+        properties:
+           From_Action:
+             type: ref[sysengn.Action.Id]
+             presence: required
+           To_Action:
+             type: ref[sysengn.Action.Id]
+             presence: required
+           Guard:
+             type: string
+             description: Condition that must be true for flow to proceed (used for If/Else branches).
+             presence: optional
+
+    enums:
+      ActionKind:
+        values:
+          - Start       # Initial Node (Entry point)
+          - End         # Final Node (Activity completion)
+          - Simple      # Standard executable action
+          - Decision    # Branching (use ControlFlow guards for If/Else logic)
+          - Merge       # Merging branches
+          - Fork        # Parallel Start
+          - Join        # Parallel End
+          - Loop        # Structured Loop container
+      RiskLevel:
+        values:
+          - Low
+          - Medium
+          - High
+          - Critical
+      
+      VerificationMethod:
+        values:
+          - Analysis
+          - Inspection
+          - Demonstration
+          - Test
+      
+      PortDirection:
+        values:
+          - in
+          - out
+          - inout

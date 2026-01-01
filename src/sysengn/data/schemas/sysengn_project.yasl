@@ -3,36 +3,42 @@ imports:
 definitions:
   sysengn:
     types:
-      project:
+      Project:
         description: A SysEngn project definition.
         properties:
-          name:
+          Name:
             type: string
             description: The name of the project.
             presence: required
-          short_name:
+            unique: true
+          Short_Name:
             type: string
             description: A short name or identifier for the project.
             str_max: 4
             presence: required
-          description:
+            unique: true
+          Description:
             type: string
             description: A brief description of the project.
             presence: optional
             default: ""
-          created_date:
+          Subprojects:
+            type: ref[sysengn.Project.Name][]
+            description: List of subprojects under this project.
+            presence: optional
+          Created_On:
             type: datetime
             description: The timestamp when the project was created.
             presence: required
-          updated_at:
+          Updated_On:
             type: datetime
             description: The timestamp when the project was last updated.
             presence: required
-          admin_ids:
-            type: ref[user.email][]
+          Project_Administrators:
+            type: ref[sysengn.User.Email][]
             description: The unique identifier of the user(s) who administer the project.
             presence: required
-          repo_url:
+          Repository_URL:
             type: url
             description: The URL of the project's repository.
             presence: required

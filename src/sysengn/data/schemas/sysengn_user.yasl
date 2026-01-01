@@ -1,76 +1,72 @@
 definitions:
   sysengn:
     types:
-      group:
+      Group:
         description: A SysEngn user group definition.
         properties:
-          name:
+          Name:
             type: string
             description: The name of the group.
             presence: required
             unique: true
-          description:
+          Description:
             type: string
             description: A brief description of the group.
             presence: optional
             default: ""
-          created_at:
+          Created_On:
             type: datetime
             description: The timestamp when the group was created.
             presence: required
-          updated_at:
+          Updated_On:
             type: datetime
             description: The timestamp when the group was last updated.
             presence: required
-      user:
+      User:
         description: A SysEngn user definition.
         properties:
-          first_name:
+          First_Name:
             type: string
             description: The user's first name.
             presence: required
-          last_name:
+          Last_Name:
             type: string
             description: The user's last name.
             presence: required
-          email:
+          Email:
             type: EmailStr
             description: The user's email address.
             presence: required
             unique: true
-          preferred_color:
+          Preferred_Color:
             type: string
             description: The user's preferred color in HEX format.
             presence: optional
-          created_at:
+          Created_On:
             type: datetime
             description: The timestamp when the user was created.
             presence: required
-          updated_at:
+          Updated_On:
             type: datetime
             description: The timestamp when the user was last updated.
             presence: required
-          member_of:
-            type: ref[sysengn.group.name][]
-            description: List of groups the user is a member of.
-            presence: required
-      permission:
+      Permission:
         description: Defines access rights for a resource.
         properties:
-          resource_type:
+          Resource_Type:
             type: string
             description: The type of resource (e.g., 'project').
             presence: required
-          actions:
+          Actions:
             type: CrudAction[]
             description: Allowed operations (create, read, update, delete).
             presence: required
-          granted_to_users:
-            type: ref[sysengn.user.email][]
+          Granted_To_Users:
+            type: ref[sysengn.User.Email][]
             description: Users explicitly granted this permission.
             presence: optional
-          granted_to_groups:
-            type: ref[sysengn.group.name][]
+          Granted_To_Groups:
+            type: ref[sysengn.Group.Name][]
             description: Groups explicitly granted this permission.
             presence: optional
 
