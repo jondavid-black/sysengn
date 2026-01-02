@@ -24,6 +24,65 @@ definitions:
             description: The parent package this package belongs to.
             presence: optional
 
+      Viewpoint:
+        description: A specification of the conventions and rules for constructing and using a view.
+        properties:
+          Id:
+            type: string
+            presence: required
+            unique: true
+          Package:
+            type: ref[sysengn.Package.Id]
+            presence: optional
+          Name:
+            type: string
+            presence: required
+          Doc:
+            type: string
+            presence: optional
+          Purpose:
+            type: string
+            description: The purpose of the views governed by this viewpoint.
+            presence: optional
+          Stakeholders:
+            type: string[]
+            description: List of stakeholders interested in this viewpoint.
+            presence: optional
+
+      View:
+        description: A representation of a system from the perspective of a specific viewpoint.
+        properties:
+          Id:
+            type: string
+            presence: required
+            unique: true
+          Package:
+            type: ref[sysengn.Package.Id]
+            presence: optional
+          Name:
+            type: string
+            presence: required
+          Doc:
+            type: string
+            presence: optional
+          Satisfies_Viewpoint:
+            type: ref[sysengn.Viewpoint.Id]
+            description: The viewpoint definition that this view conforms to.
+            presence: required
+          Filter_Condition:
+             type: string
+             description: The logic or query used to select elements for this view.
+             presence: optional
+          # Referenced Elements
+          Exposed_Parts:
+             type: ref[sysengn.Part.Id][]
+             description: System parts exposed in this view.
+             presence: optional
+          Exposed_Requirements:
+             type: ref[sysengn.Requirement.Id][]
+             description: Requirements exposed in this view.
+             presence: optional
+
       # --- Requirements ---
       Requirement:
         description: A SysML Requirement capturing a capability or constraint.
@@ -77,6 +136,93 @@ definitions:
             description: Optional unit string if not embedded in physical quantity.
             presence: optional
 
+      Item:
+        description: A definition of a thing that flows or is stored (Data, Material, Energy).
+        properties:
+          Id:
+            type: string
+            presence: required
+            unique: true
+          Package:
+            type: ref[sysengn.Package.Id]
+            description: The package this item belongs to.
+            presence: optional
+          Name:
+            type: string
+            presence: required
+          Doc:
+            type: string
+            presence: optional
+          Attributes:
+            type: sysengn.Attribute[]
+            description: Properties characterizing this item (e.g. density, structure).
+            presence: optional
+
+      FlowProperty:
+        description: Specifies an item that flows through an interface with a direction.
+        properties:
+          Name:
+             type: string
+             presence: optional
+          Item:
+             type: ref[sysengn.Item.Id]
+             presence: required
+          Direction:
+             type: PortDirection
+             presence: required
+
+      Interface:
+        description: Defines a contract for interaction consisting of multiple flow properties.
+        properties:
+          Id:
+             type: string
+             presence: required
+             unique: true
+          Package:
+             type: ref[sysengn.Package.Id]
+             description: The package this interface belongs to.
+             presence: optional
+          Name:
+             type: string
+             presence: required
+          Doc:
+             type: string
+             presence: optional
+          Flow_Properties:
+             type: sysengn.FlowProperty[]
+             description: The list of items and directions defined by this interface.
+             presence: optional
+
+      Constraint:
+        description: A rule or assertion that restricts the state or behavior of a system.
+        properties:
+          Id:
+            type: string
+            presence: required
+            unique: true
+          Package:
+            type: ref[sysengn.Package.Id]
+            description: The package this constraint belongs to.
+            presence: optional
+          Name:
+            type: string
+            presence: optional
+          Doc:
+            type: string
+            presence: optional
+          Expression:
+            type: string
+            description: The formal assertion (e.g. 'mass < 10kg').
+            presence: required
+          Language:
+            type: string
+            description: The language used for the expression (e.g. OCL, Math, Python).
+            default: "SysML"
+          Subject:
+            type: ref[sysengn.Part.Id]
+            description: The part constrained by this rule.
+            presence: optional
+
       Port:
         description: An interaction point for a Part.
         properties:
@@ -86,12 +232,23 @@ definitions:
           Direction:
             type: PortDirection
             presence: required
-          Type:
-            type: string
-            description: The type of data, energy, or material flowing.
+          Multiplicity:
+            type: Multiplicity
+            description: Cardinality of the port.
+            default: One
+          # A Port can be typed by a simple Item (data) OR a complex Interface
+          Item_Type:
+            type: ref[sysengn.Item.Id]
+            description: The specific type of Item flowing (if simple port).
             presence: optional
+          Interface_Type:
+             type: ref[sysengn.Interface.Id]
+             description: The complex interface definition (if complex port).
+             presence: optional
+        validators:
+          only_one: [Item_Type, Interface_Type]
 
-      Connector:
+      Connection:
         description: A line of communication or flow between two points.
         properties:
           Name:
@@ -105,9 +262,10 @@ definitions:
              type: string
              description: Path or ID of the target element.
              presence: required
-          Flow_Type:
-             type: string
-             description: What flows across this connector.
+          Flow_Item:
+             type: ref[sysengn.Item.Id]
+             description: The specific Item flowing across this connection.
+             presence: optional
 
       Part:
         description: A structural unit (System, Subsystem, Component).
@@ -123,6 +281,10 @@ definitions:
           Name:
             type: string
             presence: required
+          Multiplicity:
+            type: Multiplicity
+            description: Number of instances of this part in its context.
+            default: One
           Description:
             type: string
             presence: optional
@@ -139,13 +301,17 @@ definitions:
             type: sysengn.Port[]
             description: Interaction points on this part.
             presence: optional
-          Connectors:
-            type: sysengn.Connector[]
+          Connections:
+            type: sysengn.Connection[]
             description: Internal connections between sub-parts.
             presence: optional
           Attributes:
             type: sysengn.Attribute[]
             description: Values and properties of this part.
+            presence: optional
+          Constraints:
+            type: ref[sysengn.Constraint.Id][]
+            description: Constraints applied to this part.
             presence: optional
           # Relationships
           Satisfies:
@@ -239,13 +405,13 @@ definitions:
             type: string
             description: Extended documentation for the action.
             presence: optional
-          Inputs:
-            type: string[]
-            description: Data items required by this action.
+          Input_Parameters:
+            type: ref[sysengn.Item.Id][]
+            description: Typed inputs for the action.
             presence: optional
-          Outputs:
-            type: string[]
-            description: Data items produced by this action.
+          Output_Parameters:
+            type: ref[sysengn.Item.Id][]
+            description: Typed outputs for the action.
             presence: optional
           # Structured / Nesting
           Sub_Actions:
@@ -275,6 +441,70 @@ definitions:
            Guard:
              type: string
              description: Condition that must be true for flow to proceed (used for If/Else branches).
+             presence: optional
+
+      State:
+        description: A condition or situation in the life of an object (State Machine).
+        properties:
+          Id:
+            type: string
+            presence: required
+            unique: true
+          Package:
+            type: ref[sysengn.Package.Id]
+            description: The package this state belongs to.
+            presence: optional
+          Name:
+            type: string
+            presence: required
+          Doc:
+            type: string
+            presence: optional
+          Entry_Action:
+            type: ref[sysengn.Action.Id]
+            description: Action executed upon entering the state.
+            presence: optional
+          Exit_Action:
+            type: ref[sysengn.Action.Id]
+            description: Action executed upon exiting the state.
+            presence: optional
+          Do_Action:
+            type: ref[sysengn.Action.Id]
+            description: Action executed while in the state.
+            presence: optional
+          Sub_States:
+            type: ref[sysengn.State.Id][]
+            description: Nested substates (composite state).
+            presence: optional
+          Subject:
+            type: ref[sysengn.Part.Id]
+            description: The part that owns or exhibits this state behavior.
+            presence: optional
+
+      Transition:
+        description: A change from one state to another triggered by an event.
+        properties:
+           Id:
+             type: string
+             presence: required
+             unique: true
+           From_State:
+             type: ref[sysengn.State.Id]
+             presence: required
+           To_State:
+             type: ref[sysengn.State.Id]
+             presence: required
+           Trigger:
+             type: string
+             description: The event that triggers this transition.
+             presence: optional
+           Guard:
+             type: string
+             description: A condition that must be true for the transition to occur.
+             presence: optional
+           Effect:
+             type: ref[sysengn.Action.Id]
+             description: Action performed during the transition.
              presence: optional
 
     enums:
@@ -307,3 +537,10 @@ definitions:
           - in
           - out
           - inout
+      
+      Multiplicity:
+        values:
+          - One           # 1
+          - ZeroOrOne     # 0..1
+          - ZeroOrMore    # *
+          - OneOrMore     # 1..*

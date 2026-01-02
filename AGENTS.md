@@ -170,7 +170,7 @@ definitions:
             type: <primitive_type>
             presence: required  # optional (default), required, preferred
         validators:
-          at_least_one: [<property_name>, property_name]
+          at_least_one: [<property_name>, <property_name>]
             # ... additional validators
     enums:              # Define reusable value sets here
       <EnumName>:
