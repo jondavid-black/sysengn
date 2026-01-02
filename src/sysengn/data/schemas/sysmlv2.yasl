@@ -339,51 +339,6 @@ definitions:
             description: Extended documentation for the actor.
             presence: optional
 
-      UseCase:
-        description: A specific way of using the system by selected actors.
-        properties:
-          Id:
-            type: string
-            presence: required
-            unique: true
-          Package:
-            type: ref[sysengn.Package.Id]
-            description: The package this use case belongs to.
-            presence: optional
-          Name:
-            type: string
-            presence: required
-          Doc:
-            type: string
-            description: Extended documentation for the use case.
-            presence: optional
-          Subject:
-            type: ref[sysengn.Part.Id]
-            description: The system or part under design.
-            presence: optional
-          Actors:
-            type: ref[sysengn.Actor.Name][]
-            description: Actors involved in this use case.
-            presence: optional
-          Behavior_Start:
-            type: ref[sysengn.Action.Id]
-            description: The starting action of the behavior flow defined for this use case.
-            presence: optional
-          Sub_UseCases:
-            type: ref[sysengn.UseCase.Id][]
-            description: Included or extending use cases (decomposition).
-            presence: optional
-          Satisfies:
-            type: ref[sysengn.Requirement.Id][]
-            description: Requirements this use case satisfies.
-            presence: optional
-          Preconditions:
-            type: string
-            presence: optional
-          Postconditions:
-            type: string
-            presence: optional
-
       Action:
         description: A fundamental unit of behavior execution.
         properties:
@@ -427,6 +382,52 @@ definitions:
           Satisfies:
             type: ref[sysengn.Requirement.Id][]
             description: Requirements this action satisfies or verifies.
+            presence: optional
+
+      UseCase:
+        description: A specific way of using the system by selected actors.
+        properties:
+          Id:
+            type: string
+            presence: required
+            unique: true
+          Package:
+            type: ref[sysengn.Package.Id]
+            description: The package this use case belongs to.
+            presence: optional
+          Name:
+            type: string
+            presence: required
+          Doc:
+            type: string
+            description: Extended documentation for the use case.
+            presence: optional
+          Subject:
+            type: ref[sysengn.Part.Id]
+            description: The system or part under design.
+            presence: optional
+          Actors:
+            type: ref[sysengn.Actor.Name][]
+            description: Actors involved in this use case.
+            presence: optional
+          Behavior_Start:
+            type: ref[sysengn.Action.Id]
+            description: The starting action of the behavior flow defined for this use case.
+            presence: optional
+            unique: false
+          Sub_UseCases:
+            type: ref[sysengn.UseCase.Id][]
+            description: Included or extending use cases (decomposition).
+            presence: optional
+          Satisfies:
+            type: ref[sysengn.Requirement.Id][]
+            description: Requirements this use case satisfies.
+            presence: optional
+          Preconditions:
+            type: string
+            presence: optional
+          Postconditions:
+            type: string
             presence: optional
 
       ControlFlow:
@@ -506,6 +507,48 @@ definitions:
              type: ref[sysengn.Action.Id]
              description: Action performed during the transition.
              presence: optional
+
+      # --- Root Type for Data File ---
+      sysmlv2:
+        description: Root element to hold lists of all system elements for data validation.
+        properties:
+          Name:
+            type: string
+            description: Name of the SysML model.
+            presence: required
+          Description:
+            type: string
+            presence: optional
+          Packages:
+            type: sysengn.Package[]
+            presence: optional
+          Requirements:
+            type: sysengn.Requirement[]
+            presence: optional
+          Items:
+            type: sysengn.Item[]
+            presence: optional
+          Parts:
+            type: sysengn.Part[]
+            presence: optional
+          Actions:
+            type: sysengn.Action[]
+            presence: optional
+          Actors:
+            type: sysengn.Actor[]
+            presence: optional
+          UseCases:
+            type: sysengn.UseCase[]
+            presence: optional
+          ControlFlows:
+            type: sysengn.ControlFlow[]
+            presence: optional
+          States:
+            type: sysengn.State[]
+            presence: optional
+          Transitions:
+            type: sysengn.Transition[]
+            presence: optional
 
     enums:
       ActionKind:

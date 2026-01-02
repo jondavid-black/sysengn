@@ -4,7 +4,7 @@ requires-python = ">=3.12"
 
 [[package]]
 name = "advanced-yaml"
-version = "0.4.9"
+version = "0.4.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "astropy" },
@@ -16,9 +16,9 @@ dependencies = [
     { name = "sqlmodel" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d1/9c/bca2e9ad9185e08c4cfdefa8135ae75a58a289f8c48d3ceb2dd9e5764bfb/advanced_yaml-0.4.9.tar.gz", hash = "sha256:0a7194f952e56bae9fde6e7aeb17e3c0eb6f7d9e7d345fedc51cb74d41dc35d2", size = 34727, upload-time = "2026-01-01T19:37:50.245Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1b/0d/cdc1f85dbc61d315ef5865eab867c8c05d8d8e369c25d0ef4588c3cc91f7/advanced_yaml-0.4.10.tar.gz", hash = "sha256:b90f557c59f7354f18b160a1eb65ba7276caba953cd1fe3bc1b0beb82b5b2067", size = 34732, upload-time = "2026-01-02T23:40:57.623Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/06/e6/0ef57ca443e3b2f83198b7c4e6da74c1d3b86311f50dfc4104679f074c93/advanced_yaml-0.4.9-py3-none-any.whl", hash = "sha256:b68b262c373d191e654dd869bd984623b442c858c0451376db882578f4d5ba6e", size = 39354, upload-time = "2026-01-01T19:37:49.012Z" },
+    { url = "https://files.pythonhosted.org/packages/2d/36/e028e63444b6862b28a51f2da731d27241249712e62588fb59b2f282f7ba/advanced_yaml-0.4.10-py3-none-any.whl", hash = "sha256:23784fe52c2b03763df46f0631aa53b7b661eacde78cc3d8b673343016c6f1d9", size = 39369, upload-time = "2026-01-02T23:40:56.098Z" },
 ]
 
 [[package]]

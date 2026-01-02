@@ -1,0 +1,71 @@
+# Last attempt structure: Explicitly reference the type names as sysengn.Type
+Name: "Vehicle Model"
+Description: "Test Model"
+Packages:
+  - Id: "pkg-001"
+    Name: "Vehicle Systems"
+    Doc: "Top level package for vehicle design"
+
+Requirements:
+  - Id: "req-001"
+    Package: "pkg-001"
+    Name: "Max Speed"
+    Text: "The vehicle shall achieve a top speed of at least 120 km/h."
+    Risk: "Medium"
+    Verification_Method: "Test"
+
+Items:
+  - Id: "item-fuel"
+    Package: "pkg-001"
+    Name: "Fuel"
+    Doc: "Liquid gasoline"
+
+Parts:
+  - Id: "part-car"
+    Package: "pkg-001"
+    Name: "Car"
+    Doc: "The entire vehicle system"
+    Satisfies: ["req-001"]
+    Ports:
+      - Name: "FuelIn"
+        Direction: "in"
+        Item_Type: "item-fuel"
+  
+  - Id: "part-engine"
+    Package: "pkg-001"
+    Name: "Engine"
+    Doc: "Internal combustion engine"
+    Multiplicity: "One"
+
+Actors:
+  - Name: "Driver"
+    Package: "pkg-001"
+    Doc: "Person driving the vehicle"
+
+Actions:
+  - Id: "act-start-node"
+    Name: "Start"
+    Kind: "Start"
+  
+  - Id: "act-ignition"
+    Name: "Turn Ignition"
+    Kind: "Simple"
+    Input_Parameters: ["item-fuel"]
+  
+  - Id: "act-end-node"
+    Name: "End"
+    Kind: "End"
+
+UseCases:
+  - Id: "uc-start"
+    Package: "pkg-001"
+    Name: "Start Vehicle"
+    Subject: "part-car"
+    Actors: ["Driver"]
+    Behavior_Start: "act-start-node"
+
+ControlFlows:
+  - From_Action: "act-start-node"
+    To_Action: "act-ignition"
+  - From_Action: "act-ignition"
+    To_Action: "act-end-node"
