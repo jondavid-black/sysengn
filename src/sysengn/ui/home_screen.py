@@ -21,20 +21,20 @@ def HomeScreen(page: ft.Page, user: User) -> ft.Container:
                         _build_summary_card(
                             "Active Projects",
                             "3",
-                            str(ft.Icons.FOLDER_OPEN),
+                            ft.Icons.FOLDER_OPEN,
                             ft.Colors.BLUE,
                         ),
                         _build_summary_card(
                             "Pending Tasks",
                             "12",
-                            str(ft.Icons.TASK_ALT),
+                            ft.Icons.TASK_ALT,
                             ft.Colors.ORANGE,
                         ),
                         _build_summary_card(
-                            "Team Members", "8", str(ft.Icons.PEOPLE), ft.Colors.GREEN
+                            "Team Members", "8", ft.Icons.PEOPLE, ft.Colors.GREEN
                         ),
                         _build_summary_card(
-                            "System Alerts", "0", str(ft.Icons.WARNING), ft.Colors.RED
+                            "System Alerts", "0", ft.Icons.WARNING, ft.Colors.RED
                         ),
                     ],
                     wrap=True,
@@ -62,7 +62,7 @@ def _build_summary_card(title: str, value: str, icon_name: str, color: str):
         ),
         width=200,
         height=150,
-        bgcolor=ft.Colors.ON_SURFACE_VARIANT,
+        bgcolor=ft.Colors.GREY_800,  # Using standard grey for better dark mode look
         border_radius=10,
         padding=20,
         alignment=ft.Alignment(0, 0),

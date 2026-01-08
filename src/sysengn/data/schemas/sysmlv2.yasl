@@ -124,17 +124,32 @@ definitions:
       Attribute:
         description: A property defining a value for an element.
         properties:
+          Package:
+            type: ref[sysengn.Package.Id]
+            description: The package this attribute definition belongs to.
+            presence: optional
           Name:
             type: string
             presence: required
+            unique: true
+          Primitive_Type:
+            type: AttributeDataType
+            description: The primitive type of the attribute.
+            presence: optional
+          Attribute_Type:
+            type: ref[sysengn.Attribute.Name]
+            description: Reference to a defined attribute type.
+            presence: optional
           Value:
             type: any
             description: The value (int, float, string, or physical quantity).
-            presence: required
+            presence: optional
           Unit:
             type: string
             description: Optional unit string if not embedded in physical quantity.
             presence: optional
+        validators:
+          at_least_one: [Value, Primitive_Type, Attribute_Type]
 
       Item:
         description: A definition of a thing that flows or is stored (Data, Material, Energy).
@@ -531,6 +546,9 @@ definitions:
           Parts:
             type: sysengn.Part[]
             presence: optional
+          Attributes:
+            type: sysengn.Attribute[]
+            presence: optional
           Actions:
             type: sysengn.Action[]
             presence: optional
@@ -587,3 +605,31 @@ definitions:
           - ZeroOrOne     # 0..1
           - ZeroOrMore    # *
           - OneOrMore     # 1..*
+
+      AttributeDataType:
+        values:
+          - int
+          - float
+          - string
+          - bool
+          - date
+          - datetime
+          - clocktime
+          - url
+          - path
+          - length
+          - mass
+          - time
+          - velocity
+          - temperature
+          - frequency
+          - angle
+          - area
+          - volume
+          - pressure
+          - energy
+          - power
+          - voltage
+          - current
+          - resistance
+          - data quantity

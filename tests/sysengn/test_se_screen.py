@@ -123,3 +123,91 @@ def test_se_screen_project_not_found(mock_pm_cls):
     header_text = header_row.controls[0]  # type: ignore
 
     assert "MBSE: Unknown Project" == header_text.value
+
+
+@patch("sysengn.ui.se.se_screen.ProjectManager")
+def test_se_screen_rail_navigation(mock_pm_cls):
+    """Verify SEScreen navigation rail changes content."""
+    mock_pm = mock_pm_cls.return_value
+    mock_project = Project(
+        id="123",
+        name="Test Project",
+        description="Desc",
+        owner_id="u1",
+        status="Active",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+    mock_pm.get_project.return_value = mock_project
+
+    mock_page = MagicMock(spec=ft.Page)
+    mock_page.session.get.return_value = "123"
+    mock_user = MagicMock(spec=User)
+
+    screen = SEScreen(mock_page, mock_user)
+
+    # Manually attach mock page to drawer container ref since it's not actually added to a page layout
+    # This mocks the behavior of Flet's internal referencing when control is mounted
+    mock_container = MagicMock(spec=ft.Container)
+    # We need to simulate that the control is "on the page" so update() doesn't fail
+    # or just mock the reference to return a mock object that absorbs update()
+    screen.drawer_container_ref.current = mock_container
+
+    # Simulate rail change event to index 1 (Containment Tree)
+    mock_event = MagicMock()
+    mock_event.control.selected_index = 1
+    screen.on_rail_change(mock_event)
+
+    # Verify drawer content updated via the mock container we injected
+    assert mock_container.update.called
+    assert mock_container.content is not None
+
+    # Let's manually invoke _build_tree_view and check structure
+    tree_view = screen._build_tree_view(
+        "Containment", screen.containment_data, ft.Icons.ADD_BOX
+    )
+    assert isinstance(tree_view, ft.Column)
+    assert isinstance(tree_view.controls[0], ft.Row)  # Header
+    assert isinstance(tree_view.controls[2], ft.Container)  # Tree container
+
+    # Check tree nodes generation
+    nodes = screen._build_tree_nodes(screen.containment_data)
+    assert len(nodes) > 0
+    assert isinstance(nodes[0], ft.Container)
+
+    # Simulate rail change to index 2 (Specification Tree)
+    mock_event.control.selected_index = 2
+    screen.on_rail_change(mock_event)
+    assert mock_container.update.call_count == 2
+
+    # Simulate rail change to index 0 (File System)
+    mock_event.control.selected_index = 0
+    screen.on_rail_change(mock_event)
+    assert mock_container.update.call_count == 3
+
+    # Verify drawer content updated
+    assert isinstance(screen.drawer_content, ft.Text)  # Initial was Text
+    # Since we can't easily check the *new* content object reference without mocking internal builds more,
+    # we can check if update() was called on the ref
+    # Ideally we'd inspect screen.drawer_container_ref.current.content, but that requires setting .current manually
+
+    # Let's manually invoke _build_tree_view and check structure
+    tree_view = screen._build_tree_view(
+        "Containment", screen.containment_data, ft.Icons.ADD_BOX
+    )
+    assert isinstance(tree_view, ft.Column)
+    assert isinstance(tree_view.controls[0], ft.Row)  # Header
+    assert isinstance(tree_view.controls[2], ft.Container)  # Tree container
+
+    # Check tree nodes generation
+    nodes = screen._build_tree_nodes(screen.containment_data)
+    assert len(nodes) > 0
+    assert isinstance(nodes[0], ft.Container)
+
+    # Simulate rail change to index 2 (Specification Tree)
+    mock_event.control.selected_index = 2
+    screen.on_rail_change(mock_event)
+
+    # Simulate rail change to index 0 (File System)
+    mock_event.control.selected_index = 0
+    screen.on_rail_change(mock_event)
