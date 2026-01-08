@@ -4,7 +4,7 @@ from sysengn.core.project_manager import ProjectManager
 
 
 def SEScreen(page: ft.Page, user: User) -> ft.Control:
-    """The Systems Engineering Screen component."""
+    """The Systems Engineering Screen component with Side Rail and Drawer."""
 
     current_project_id = page.session.get("current_project_id")
 
@@ -35,11 +35,71 @@ def SEScreen(page: ft.Page, user: User) -> ft.Control:
     # Fetch project details
     pm = ProjectManager()
     project = pm.get_project(current_project_id)
-
     project_name = project.name if project else "Unknown Project"
 
-    # Placeholder content for SE tools
-    return ft.Container(
+    # Drawer Content State
+    drawer_content = ft.Text("File System Content", size=14)
+
+    # We need a reference to the drawer content container to update it
+    drawer_container_ref = ft.Ref[ft.Container]()
+
+    def on_rail_change(e):
+        selected_index = e.control.selected_index
+        new_content = ft.Text("Unknown Selection")
+        if selected_index == 0:
+            new_content = ft.Text("File System Content", size=14)
+        elif selected_index == 1:
+            new_content = ft.Text("Containment Tree Content", size=14)
+        elif selected_index == 2:
+            new_content = ft.Text("Specification Tree Content", size=14)
+
+        if drawer_container_ref.current:
+            drawer_container_ref.current.content = new_content
+            drawer_container_ref.current.update()
+
+    # Side Rail
+    rail = ft.NavigationRail(
+        selected_index=0,
+        label_type=ft.NavigationRailLabelType.NONE,
+        min_width=50,
+        min_extended_width=150,
+        group_alignment=-0.9,
+        destinations=[
+            ft.NavigationRailDestination(
+                icon=ft.Icons.FOLDER,
+                selected_icon=ft.Icons.FOLDER_OPEN,
+                label="File System",
+                padding=ft.padding.symmetric(vertical=10),
+            ),
+            ft.NavigationRailDestination(
+                icon=ft.Icons.ACCOUNT_TREE_OUTLINED,
+                selected_icon=ft.Icons.ACCOUNT_TREE,
+                label="Containment Tree",
+                padding=ft.padding.symmetric(vertical=10),
+            ),
+            ft.NavigationRailDestination(
+                icon=ft.Icons.LIST_ALT_OUTLINED,
+                selected_icon=ft.Icons.LIST_ALT,
+                label="Specification Tree",
+                padding=ft.padding.symmetric(vertical=10),
+            ),
+        ],
+        on_change=on_rail_change,
+        bgcolor=ft.Colors.GREY_900,
+    )
+
+    # Drawer Container
+    drawer = ft.Container(
+        ref=drawer_container_ref,
+        content=drawer_content,
+        width=250,
+        bgcolor=ft.Colors.GREY_800,
+        padding=10,
+        border=ft.border.only(right=ft.BorderSide(1, ft.Colors.GREY_700)),
+    )
+
+    # Main Content Area (Tabs)
+    main_content = ft.Container(
         padding=20,
         content=ft.Column(
             [
@@ -100,4 +160,16 @@ def SEScreen(page: ft.Page, user: User) -> ft.Control:
             expand=True,
         ),
         expand=True,
+    )
+
+    # Layout: Rail | Drawer | Main Content
+    return ft.Row(
+        controls=[
+            rail,
+            drawer,
+            ft.VerticalDivider(width=1, color=ft.Colors.GREY_700),
+            main_content,
+        ],
+        expand=True,
+        spacing=0,
     )
