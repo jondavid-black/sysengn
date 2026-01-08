@@ -50,6 +50,8 @@ def init_db(db_path: str | Path | None = None) -> None:
                 description TEXT,
                 status TEXT DEFAULT 'Active',
                 owner_id TEXT,
+                path TEXT,
+                repo_url TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(owner_id) REFERENCES users(id)

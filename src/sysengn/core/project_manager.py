@@ -16,13 +16,22 @@ class ProjectManager:
     def __init__(self, db_path: Optional[str] = None):
         self.db_path = db_path
 
-    def create_project(self, name: str, description: str, owner_id: str) -> Project:
+    def create_project(
+        self,
+        name: str,
+        description: str,
+        owner_id: str,
+        path: str,
+        repo_url: str | None = None,
+    ) -> Project:
         """Creates a new project.
 
         Args:
             name: The name of the project.
             description: A description of the project.
             owner_id: The ID of the user creating the project.
+            path: The file system path to the project.
+            repo_url: Optional remote git repository URL.
 
         Returns:
             The created Project object.
@@ -35,8 +44,8 @@ class ProjectManager:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO projects (id, name, description, status, owner_id, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO projects (id, name, description, status, owner_id, path, repo_url, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 # Use isoformat() string to avoid deprecation warning for default adapter
                 (
@@ -45,6 +54,8 @@ class ProjectManager:
                     description,
                     "Active",
                     owner_id,
+                    path,
+                    repo_url,
                     now.isoformat(),
                     now.isoformat(),
                 ),
@@ -57,6 +68,8 @@ class ProjectManager:
                 description=description,
                 status="Active",
                 owner_id=owner_id,
+                path=path,
+                repo_url=repo_url,
                 created_at=now,
                 updated_at=now,
             )
@@ -120,6 +133,8 @@ class ProjectManager:
                         description=row["description"],
                         status=row["status"],
                         owner_id=row["owner_id"],
+                        path=row["path"],
+                        repo_url=row["repo_url"],
                         created_at=final_created_at,
                         updated_at=final_updated_at,
                     )
@@ -168,6 +183,8 @@ class ProjectManager:
                 description=row["description"],
                 status=row["status"],
                 owner_id=row["owner_id"],
+                path=row["path"],
+                repo_url=row["repo_url"],
                 created_at=parse_dt(row["created_at"]),
                 updated_at=parse_dt(row["updated_at"]),
             )

@@ -139,6 +139,8 @@ def PMScreen(
     desc_field = ft.TextField(
         label="Description", multiline=True, min_lines=2, max_lines=4
     )
+    path_field = ft.TextField(label="Path")
+    repo_url_field = ft.TextField(label="Repo URL (Optional)")
 
     # We need to define create_dialog first so close_dialog can reference it
     # But create_dialog needs buttons which call functions that might reference create_dialog
@@ -148,7 +150,9 @@ def PMScreen(
     create_dialog = ft.AlertDialog(
         modal=True,
         title=ft.Text("New Project"),
-        content=ft.Column([name_field, desc_field], tight=True, width=400),
+        content=ft.Column(
+            [name_field, desc_field, path_field, repo_url_field], tight=True, width=400
+        ),
         actions_alignment=ft.MainAxisAlignment.END,
     )
 
@@ -161,12 +165,18 @@ def PMScreen(
             name_field.error_text = "Name is required"
             name_field.update()
             return
+        if not path_field.value:
+            path_field.error_text = "Path is required"
+            path_field.update()
+            return
 
         try:
             pm.create_project(
                 name=name_field.value,
                 description=desc_field.value or "",
                 owner_id=user.id,
+                path=path_field.value,
+                repo_url=repo_url_field.value or None,
             )
             create_dialog.open = False
             page.update()
@@ -174,7 +184,10 @@ def PMScreen(
             # Reset and reload
             name_field.value = ""
             desc_field.value = ""
+            path_field.value = ""
+            repo_url_field.value = ""
             name_field.error_text = None
+            path_field.error_text = None
 
             load_projects()
 

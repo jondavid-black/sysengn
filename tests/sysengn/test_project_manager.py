@@ -23,12 +23,17 @@ def project_manager(test_db_path):
 
 def test_create_project(project_manager):
     project = project_manager.create_project(
-        name="Test Project", description="A test project", owner_id="user1"
+        name="Test Project",
+        description="A test project",
+        owner_id="user1",
+        path="/tmp/test_project",
     )
 
     assert project.name == "Test Project"
     assert project.description == "A test project"
     assert project.owner_id == "user1"
+    assert project.path == "/tmp/test_project"
+    assert project.repo_url is None
     assert project.status == "Active"
     assert project.id is not None
     assert isinstance(project.created_at, datetime)
@@ -37,8 +42,8 @@ def test_create_project(project_manager):
 
 def test_get_all_projects(project_manager):
     # Create a few projects
-    p1 = project_manager.create_project("Project 1", "Desc 1", "user1")
-    p2 = project_manager.create_project("Project 2", "Desc 2", "user1")
+    p1 = project_manager.create_project("Project 1", "Desc 1", "user1", path="/tmp/p1")
+    p2 = project_manager.create_project("Project 2", "Desc 2", "user1", path="/tmp/p2")
 
     projects = project_manager.get_all_projects()
 
@@ -47,6 +52,7 @@ def test_get_all_projects(project_manager):
     # Since p2 was created after p1, it should be first
     assert projects[0].id == p2.id
     assert projects[1].id == p1.id
+    assert projects[0].path == "/tmp/p2"
 
 
 def test_create_project_db_error(project_manager):
@@ -55,7 +61,7 @@ def test_create_project_db_error(project_manager):
         mock_conn.side_effect = sqlite3.Error("DB Error")
 
         with pytest.raises(sqlite3.Error):
-            project_manager.create_project("Fail", "Fail", "user1")
+            project_manager.create_project("Fail", "Fail", "user1", path="/tmp/fail")
 
 
 def test_get_all_projects_db_error(project_manager):
@@ -83,6 +89,8 @@ def test_get_project_found(mock_get_conn):
         "description": "Desc",
         "status": "Active",
         "owner_id": "u1",
+        "path": "/tmp/test",
+        "repo_url": None,
         "created_at": now.isoformat(),
         "updated_at": now.isoformat(),
     }
@@ -93,6 +101,7 @@ def test_get_project_found(mock_get_conn):
     assert project is not None
     assert project.id == "123"
     assert project.name == "Test Project"
+    assert project.path == "/tmp/test"
     assert isinstance(project.created_at, datetime)
 
 

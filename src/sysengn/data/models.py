@@ -9,5 +9,7 @@ class Project:
     description: str
     status: str
     owner_id: str
+    path: str
+    repo_url: str | None
     created_at: datetime
     updated_at: datetime

@@ -53,6 +53,8 @@ def test_pm_screen_with_projects(mock_pm_cls):
         description="Desc A",
         owner_id="u1",
         status="Active",
+        path="/tmp/p1",
+        repo_url=None,
         created_at=datetime.now(),
         updated_at=datetime.now(),
     )
@@ -62,6 +64,8 @@ def test_pm_screen_with_projects(mock_pm_cls):
         description="Desc B",
         owner_id="u1",
         status="Draft",
+        path="/tmp/p2",
+        repo_url=None,
         created_at=datetime.now(),
         updated_at=datetime.now(),
     )
@@ -151,9 +155,21 @@ def test_create_project_flow(mock_pm_cls):
     assert isinstance(content_col, ft.Column)
     name_field = content_col.controls[0]  # type: ignore
     desc_field = content_col.controls[1]  # type: ignore
+    path_field = content_col.controls[2]
+    repo_field = content_col.controls[3]
 
     name_field.value = "New App"  # type: ignore
     desc_field.value = "My Description"  # type: ignore
+    path_field.value = "/tmp/new_app"
+    # repo_field.value = "" # default empty
+
+    # IMPORTANT: Flet controls check if they are added to a page before update() is called.
+    # In this test environment with mocks, we need to ensure the controls think they are attached.
+    # We can mock the `page` property or `_Control__page` private attribute.
+    name_field._Control__page = mock_page
+    desc_field._Control__page = mock_page
+    path_field._Control__page = mock_page
+    repo_field._Control__page = mock_page
 
     # Find Create button in actions
     create_btn = dialog.actions[1]  # type: ignore
@@ -166,7 +182,11 @@ def test_create_project_flow(mock_pm_cls):
 
     # 4. Verify PM call and success
     mock_pm.create_project.assert_called_with(
-        name="New App", description="My Description", owner_id="user1"
+        name="New App",
+        description="My Description",
+        owner_id="user1",
+        path="/tmp/new_app",
+        repo_url=None,
     )
 
     assert dialog.open is False

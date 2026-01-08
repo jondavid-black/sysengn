@@ -39,6 +39,8 @@ def test_se_screen_with_project(mock_pm_cls):
         description="Desc",
         owner_id="u1",
         status="Active",
+        path="/tmp/test",
+        repo_url=None,
         created_at=datetime.now(),
         updated_at=datetime.now(),
     )
@@ -135,6 +137,8 @@ def test_se_screen_rail_navigation(mock_pm_cls):
         description="Desc",
         owner_id="u1",
         status="Active",
+        path="/tmp/test",
+        repo_url=None,
         created_at=datetime.now(),
         updated_at=datetime.now(),
     )
