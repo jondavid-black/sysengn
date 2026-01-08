@@ -14,9 +14,28 @@ def test_docs_screen_structure():
     docs_screen = DocsScreen(mock_page, mock_user)
 
     assert isinstance(docs_screen, ft.Container)
-    assert isinstance(docs_screen.content, ft.Column)
+    # Now it's a Row because of the side rail layout
+    assert isinstance(docs_screen.content, ft.Row)
 
-    column = docs_screen.content
+    row = docs_screen.content
+    assert len(row.controls) == 4
+
+    # Check Rail
+    rail = row.controls[0]
+    assert isinstance(rail, ft.NavigationRail)
+    assert rail.destinations is not None
+    assert len(rail.destinations) == 2
+
+    # Check Drawer
+    drawer = row.controls[1]
+    assert isinstance(drawer, ft.Container)
+
+    # Check Main Content
+    main_content_container = row.controls[3]
+    assert isinstance(main_content_container, ft.Container)
+
+    column = main_content_container.content
+    assert isinstance(column, ft.Column)
     controls = column.controls
 
     # Check Title
