@@ -97,6 +97,15 @@ def PMScreen(
                                         overflow=ft.TextOverflow.ELLIPSIS,
                                     ),
                                     ft.Container(height=5),
+                                    ft.Text(
+                                        f"Location: {project.path}",
+                                        size=11,
+                                        color=ft.Colors.GREY_500,
+                                        font_family="monospace",
+                                        overflow=ft.TextOverflow.ELLIPSIS,
+                                        max_lines=1,
+                                    ),
+                                    ft.Container(height=5),
                                     ft.Row(
                                         [
                                             ft.Row(
