@@ -163,13 +163,17 @@ def SEScreen(page: ft.Page, user: User) -> ft.Control:
     )
 
     # Layout: Rail | Drawer | Main Content
-    return ft.Row(
-        controls=[
-            rail,
-            drawer,
-            ft.VerticalDivider(width=1, color=ft.Colors.GREY_700),
-            main_content,
-        ],
+    # Use Container with Row inside to manage expansion properly
+    return ft.Container(
+        content=ft.Row(
+            controls=[
+                rail,
+                drawer,
+                ft.VerticalDivider(width=1, color=ft.Colors.GREY_700),
+                main_content,
+            ],
+            expand=True,
+            spacing=0,
+        ),
         expand=True,
-        spacing=0,
     )

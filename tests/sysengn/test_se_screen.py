@@ -55,22 +55,24 @@ def test_se_screen_with_project(mock_pm_cls):
     mock_pm.get_project.assert_called_with("123")
 
     # Verify Structure
-    # Row -> [Rail, Drawer, Divider, Main Content(Container)]
-    assert isinstance(screen, ft.Row)
-    assert len(screen.controls) == 4
+    # Container -> Row -> [Rail, Drawer, Divider, Main Content(Container)]
+    assert isinstance(screen, ft.Container)
+    row = screen.content
+    assert isinstance(row, ft.Row)
+    assert len(row.controls) == 4
 
     # Check Rail
-    rail = screen.controls[0]
+    rail = row.controls[0]
     assert isinstance(rail, ft.NavigationRail)
     assert rail.destinations is not None
     assert len(rail.destinations) == 3
 
     # Check Drawer
-    drawer = screen.controls[1]
+    drawer = row.controls[1]
     assert isinstance(drawer, ft.Container)
 
     # Check Main Content
-    main_content_container = screen.controls[3]
+    main_content_container = row.controls[3]
     assert isinstance(main_content_container, ft.Container)
 
     main_col = main_content_container.content  # type: ignore
@@ -110,8 +112,11 @@ def test_se_screen_project_not_found(mock_pm_cls):
     screen = SEScreen(mock_page, mock_user)
 
     # Verify Structure
-    assert isinstance(screen, ft.Row)
-    main_content_container = screen.controls[3]
+    assert isinstance(screen, ft.Container)
+    row = screen.content
+    assert isinstance(row, ft.Row)
+
+    main_content_container = row.controls[3]
     main_col = main_content_container.content  # type: ignore
 
     header_row = main_col.controls[0]  # type: ignore
