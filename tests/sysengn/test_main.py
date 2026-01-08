@@ -95,8 +95,16 @@ def test_main_page_authenticated_flet_auth():
 
     # Verify user was set in session
     assert mock_page.session.set.called
-    assert mock_page.session.set.call_args[0][0] == "user"
-    user_arg = mock_page.session.set.call_args[0][1]
+
+    # We now set 'user' AND 'current_project_id' in main_page logic.
+    # The order depends on implementation details.
+    # Let's inspect all calls to session.set
+    calls = mock_page.session.set.call_args_list
+
+    # Check for user set
+    user_call = next((c for c in calls if c[0][0] == "user"), None)
+    assert user_call is not None
+    user_arg = user_call[0][1]
     assert user_arg.email == "auth@test.com"
 
     # Same check as above - verify structure not specific text

@@ -128,13 +128,26 @@ def main_page(page: ft.Page) -> None:
         pm = ProjectManager()
         projects = pm.get_all_projects()
 
-        project_options = [ft.dropdown.Option("Select Project")] + [
-            ft.dropdown.Option(key=p.id, text=p.name) for p in projects
-        ]
+        project_options = [ft.dropdown.Option(key=p.id, text=p.name) for p in projects]
+
+        # Set default active project to first available, or empty if none
+        initial_project_id = projects[0].id if projects else None
+
+        # Only override session if not already set or invalid
+        current_session_project = page.session.get("current_project_id")
+        if not current_session_project and initial_project_id:
+            page.session.set("current_project_id", initial_project_id)  # type: ignore
+        elif current_session_project:
+            # Validate it still exists
+            if not any(p.id == current_session_project for p in projects):
+                page.session.set("current_project_id", initial_project_id)  # type: ignore
+
+        # Get final effective project ID
+        active_project_id = page.session.get("current_project_id")
 
         def on_project_change(e):
             selected_id = e.control.value
-            if selected_id and selected_id != "Select Project":
+            if selected_id:
                 page.session.set("current_project_id", selected_id)  # type: ignore
                 # Refresh current view if it depends on project
                 # We can trigger tab change to reload current tab or just notify
@@ -151,8 +164,8 @@ def main_page(page: ft.Page) -> None:
             width=200,
             text_size=14,
             content_padding=ft.padding.symmetric(horizontal=10, vertical=0),
-            # Default to first project if available or placeholder
-            value=projects[0].id if projects else "Select Project",
+            # Default to active project
+            value=active_project_id,
             options=project_options,
             border_color=ft.Colors.TRANSPARENT,
             bgcolor=ft.Colors.GREY_800,
