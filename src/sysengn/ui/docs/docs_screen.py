@@ -1,5 +1,6 @@
 import flet as ft
 from sysengn.core.auth import User
+from typing import Any
 
 
 class DocsScreen(ft.Container):
@@ -11,8 +12,39 @@ class DocsScreen(ft.Container):
         self.user = user
         self.expand = True
 
-        # Drawer Content State
-        self.drawer_content = ft.Text("Outline Content", size=14)
+        # Mock Data for Docs Tree
+        self.docs_data = [
+            {
+                "id": "doc1",
+                "title": "Project Specification",
+                "type": "document",
+                "children": [
+                    {
+                        "id": "sec1",
+                        "title": "1. Introduction",
+                        "type": "section",
+                        "children": [],
+                    },
+                    {
+                        "id": "sec2",
+                        "title": "2. Scope",
+                        "type": "section",
+                        "children": [
+                            {
+                                "id": "subsec1",
+                                "title": "2.1 In Scope",
+                                "type": "section",
+                                "children": [],
+                            }
+                        ],
+                    },
+                ],
+            },
+            {"id": "doc2", "title": "User Manual", "type": "document", "children": []},
+        ]
+
+        # Initial Drawer Content (Outline)
+        self.drawer_content = self._build_outline_view()
 
         # We need a reference to the drawer content container to update it
         self.drawer_container_ref = ft.Ref[ft.Container]()
@@ -46,7 +78,7 @@ class DocsScreen(ft.Container):
         drawer = ft.Container(
             ref=self.drawer_container_ref,
             content=self.drawer_content,
-            width=250,
+            width=300,  # Increased width for tree
             bgcolor=ft.Colors.GREY_800,
             padding=10,
             border=ft.border.only(right=ft.BorderSide(1, ft.Colors.GREY_700)),
@@ -113,11 +145,111 @@ class DocsScreen(ft.Container):
             spacing=0,
         )
 
+    def _build_outline_view(self) -> ft.Control:
+        """Builds the outline view with 'New' button and Tree."""
+
+        def create_new(e):
+            # Placeholder for create logic
+            print("Create new document/section clicked")
+            pass
+
+        return ft.Column(
+            controls=[
+                ft.Row(
+                    controls=[
+                        ft.Text("Outline", weight=ft.FontWeight.BOLD, size=16),
+                        ft.IconButton(
+                            icon=ft.Icons.ADD,
+                            tooltip="New Document/Section",
+                            icon_size=20,
+                            on_click=create_new,
+                        ),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+                ft.Divider(height=1, color=ft.Colors.GREY_700),
+                ft.Container(
+                    content=ft.Column(
+                        controls=self._build_tree_nodes(self.docs_data),
+                        scroll=ft.ScrollMode.AUTO,
+                        spacing=5,
+                    ),
+                    expand=True,
+                ),
+            ],
+            expand=True,
+            spacing=10,
+        )
+
+    def _build_tree_nodes(
+        self, nodes: list[dict[str, Any]], level: int = 0
+    ) -> list[ft.Control]:
+        """Recursively builds tree nodes."""
+        controls = []
+        for node in nodes:
+            # Node Row
+            node_row = ft.Row(
+                controls=[
+                    ft.Icon(
+                        ft.Icons.ARTICLE
+                        if node["type"] == "document"
+                        else ft.Icons.SUBDIRECTORY_ARROW_RIGHT,
+                        size=16,
+                        color=ft.Colors.BLUE_200
+                        if node["type"] == "document"
+                        else ft.Colors.GREY_400,
+                    ),
+                    ft.Text(
+                        node["title"],
+                        size=14,
+                        weight=ft.FontWeight.W_500
+                        if node["type"] == "document"
+                        else ft.FontWeight.NORMAL,
+                        expand=True,
+                        no_wrap=True,
+                        overflow=ft.TextOverflow.ELLIPSIS,
+                    ),
+                    ft.IconButton(
+                        icon=ft.Icons.DELETE_OUTLINE,
+                        icon_size=16,
+                        icon_color=ft.Colors.RED_400,
+                        tooltip="Delete",
+                        on_click=lambda e, n=node: self._delete_node(n),
+                    ),
+                ],
+                alignment=ft.MainAxisAlignment.START,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=5,
+            )
+
+            # Indent based on level
+            controls.append(
+                ft.Container(
+                    content=node_row,
+                    padding=ft.padding.only(left=level * 20),
+                    data=node["id"],
+                )
+            )
+
+            # Recursively add children
+            if node.get("children"):
+                controls.extend(self._build_tree_nodes(node["children"], level + 1))
+
+        return controls
+
+    def _delete_node(self, node: dict[str, Any]):
+        """Placeholder for delete logic."""
+        print(f"Delete requested for {node['title']}")
+        # In real app: Remove from data, rebuild tree, update UI
+        pass
+
     def on_rail_change(self, e):
         selected_index = e.control.selected_index
         new_content = ft.Text("Unknown Selection")
+
         if selected_index == 0:
-            new_content = ft.Text("Outline Content", size=14)
+            new_content = self._build_outline_view()
         elif selected_index == 1:
             new_content = ft.Text("File System Content", size=14)
 
