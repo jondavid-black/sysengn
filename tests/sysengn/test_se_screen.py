@@ -65,7 +65,7 @@ def test_se_screen_with_project(mock_pm_cls):
     # Check Header Text
     header_text = header_row.controls[0]  # type: ignore
     assert isinstance(header_text, ft.Text)
-    assert "SE: Test Project" == header_text.value
+    assert "MBSE: Test Project" == header_text.value
 
     # Check Tabs exist
     tabs_container = main_col.controls[2]  # type: ignore
@@ -96,4 +96,4 @@ def test_se_screen_project_not_found(mock_pm_cls):
     header_row = main_col.controls[0]  # type: ignore
     header_text = header_row.controls[0]  # type: ignore
 
-    assert "SE: Unknown Project" == header_text.value
+    assert "MBSE: Unknown Project" == header_text.value

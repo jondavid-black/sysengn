@@ -94,41 +94,20 @@ def main_page(page: ft.Page) -> None:
 
         return HomeScreen(page, user)
 
-    def get_mock_pm_screen() -> ft.Control:
-        from sysengn.ui.pm.pm_screen import PMScreen
-
-        def open_project(project_id: str):
-            # Set active project
-            page.session.set("current_project_id", project_id)  # type: ignore
-
-            # Update Dropdown (find it in banner)
-            # This is a bit tricky as we don't have direct ref to dropdown here easily
-            # But we kept a ref to tabs.
-            # We should probably update the dropdown value.
-
-            # For now, let's just switch tab to SE to show we "opened" it.
-            # Ideally we update the dropdown too.
-            # We can iterate page controls to find banner but that's messy.
-            # Let's rely on re-render or just switch tab.
-
-            change_tab(2)  # Switch to SE tab
-
-        return PMScreen(page, user, on_open_project=open_project)
-
     def get_mock_se_screen() -> ft.Control:
         from sysengn.ui.se.se_screen import SEScreen
 
         return SEScreen(page, user)
 
+    def get_mock_ux_screen() -> ft.Control:
+        from sysengn.ui.ux.ux_screen import UXScreen
+
+        return UXScreen(page, user)
+
     def get_mock_docs_screen() -> ft.Control:
         from sysengn.ui.docs.docs_screen import DocsScreen
 
         return DocsScreen(page, user)
-
-    def get_mock_team_screen() -> ft.Control:
-        from sysengn.ui.team.team_screen import TeamScreen
-
-        return TeamScreen(page, user)
 
     def get_user_profile_screen() -> ft.Control:
         from sysengn.ui.user_profile_screen import UserProfileScreen
@@ -165,8 +144,8 @@ def main_page(page: ft.Page) -> None:
                 # If currently on SE screen, we might want to refresh content area
                 # A simple way is to re-trigger change_tab with current index
                 current_tab_idx = tabs.selected_index
-                if current_tab_idx == 2:  # SE Tab
-                    change_tab(2)
+                if current_tab_idx == 1:  # MBSE Tab
+                    change_tab(1)
 
         project_dropdown = ft.Dropdown(
             width=200,
@@ -232,10 +211,9 @@ def main_page(page: ft.Page) -> None:
             divider_color="transparent",
             tabs=[
                 ft.Tab(text="Home"),
-                ft.Tab(text="PM"),
-                ft.Tab(text="SE"),
+                ft.Tab(text="MBSE"),
+                ft.Tab(text="UX"),
                 ft.Tab(text="Docs"),
-                ft.Tab(text="Team"),
             ],
             on_change=lambda e: on_tab_change(e.control.selected_index),
         )
@@ -408,14 +386,12 @@ def main_page(page: ft.Page) -> None:
         if index == 0:
             content_area.content = get_mock_home_screen()
         elif index == 1:
-            content_area.content = get_mock_pm_screen()
-        elif index == 2:
             content_area.content = get_mock_se_screen()
+        elif index == 2:
+            content_area.content = get_mock_ux_screen()
         elif index == 3:
             content_area.content = get_mock_docs_screen()
         elif index == 4:
-            content_area.content = get_mock_team_screen()
-        elif index == 5:
             content_area.content = get_user_profile_screen()
 
         if content_area.page:

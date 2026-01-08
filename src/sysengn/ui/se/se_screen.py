@@ -46,7 +46,7 @@ def SEScreen(page: ft.Page, user: User) -> ft.Control:
                 ft.Row(
                     [
                         ft.Text(
-                            f"SE: {project_name}", size=28, weight=ft.FontWeight.BOLD
+                            f"MBSE: {project_name}", size=28, weight=ft.FontWeight.BOLD
                         ),
                         ft.Chip(
                             label=ft.Text("Requirements"),
