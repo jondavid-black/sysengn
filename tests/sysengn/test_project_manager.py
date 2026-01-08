@@ -1,5 +1,6 @@
 import pytest
 import sqlite3
+import os
 from unittest.mock import MagicMock, patch
 from datetime import datetime
 from sysengn.core.project_manager import ProjectManager
@@ -13,37 +14,69 @@ def test_db_path(tmp_path):
 
 
 @pytest.fixture
-def project_manager(test_db_path):
+def project_manager(test_db_path, tmp_path):
     # Initialize DB
     from sysengn.db.database import init_db
 
     init_db(test_db_path)
-    return ProjectManager(db_path=test_db_path)
+    # Use tmp_path as root_dir for projects
+    return ProjectManager(db_path=test_db_path, root_dir=tmp_path)
 
 
-def test_create_project(project_manager):
+@patch("subprocess.run")
+def test_create_project(mock_run, project_manager):
     project = project_manager.create_project(
         name="Test Project",
         description="A test project",
         owner_id="user1",
-        path="/tmp/test_project",
     )
 
     assert project.name == "Test Project"
     assert project.description == "A test project"
     assert project.owner_id == "user1"
-    assert project.path == "/tmp/test_project"
+    # Path should be root_dir/owner_id/name
+    expected_path = os.path.join(project_manager.root_dir, "user1", "Test Project")
+    assert project.path == expected_path
     assert project.repo_url is None
     assert project.status == "Active"
     assert project.id is not None
     assert isinstance(project.created_at, datetime)
     assert isinstance(project.updated_at, datetime)
 
+    # Verify git init was called
+    mock_run.assert_called_with(
+        ["git", "init"], cwd=expected_path, check=True, capture_output=True, text=True
+    )
 
-def test_get_all_projects(project_manager):
+
+@patch("subprocess.run")
+def test_create_project_with_repo(mock_run, project_manager):
+    repo_url = "https://github.com/example/repo.git"
+    project = project_manager.create_project(
+        name="Cloned Project",
+        description="A cloned project",
+        owner_id="user1",
+        repo_url=repo_url,
+    )
+
+    expected_path = os.path.join(project_manager.root_dir, "user1", "Cloned Project")
+    assert project.path == expected_path
+    assert project.repo_url == repo_url
+
+    # Verify git clone was called
+    mock_run.assert_called_with(
+        ["git", "clone", repo_url, expected_path],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+@patch("subprocess.run")
+def test_get_all_projects(mock_run, project_manager):
     # Create a few projects
-    p1 = project_manager.create_project("Project 1", "Desc 1", "user1", path="/tmp/p1")
-    p2 = project_manager.create_project("Project 2", "Desc 2", "user1", path="/tmp/p2")
+    p1 = project_manager.create_project("Project 1", "Desc 1", "user1")
+    p2 = project_manager.create_project("Project 2", "Desc 2", "user1")
 
     projects = project_manager.get_all_projects()
 
@@ -52,16 +85,19 @@ def test_get_all_projects(project_manager):
     # Since p2 was created after p1, it should be first
     assert projects[0].id == p2.id
     assert projects[1].id == p1.id
-    assert projects[0].path == "/tmp/p2"
+
+    expected_path_p2 = os.path.join(project_manager.root_dir, "user1", "Project 2")
+    assert projects[0].path == expected_path_p2
 
 
-def test_create_project_db_error(project_manager):
+@patch("subprocess.run")
+def test_create_project_db_error(mock_run, project_manager):
     # Mock connection to raise error
     with patch("sysengn.core.project_manager.get_connection") as mock_conn:
         mock_conn.side_effect = sqlite3.Error("DB Error")
 
         with pytest.raises(sqlite3.Error):
-            project_manager.create_project("Fail", "Fail", "user1", path="/tmp/fail")
+            project_manager.create_project("Fail", "Fail", "user1")
 
 
 def test_get_all_projects_db_error(project_manager):

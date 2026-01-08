@@ -155,21 +155,20 @@ def test_create_project_flow(mock_pm_cls):
     assert isinstance(content_col, ft.Column)
     name_field = content_col.controls[0]  # type: ignore
     desc_field = content_col.controls[1]  # type: ignore
-    path_field = content_col.controls[2]
-    repo_field = content_col.controls[3]
+    # path_field = content_col.controls[2] # Removed path field
+    # repo_field = content_col.controls[2] # moved up
 
     name_field.value = "New App"  # type: ignore
     desc_field.value = "My Description"  # type: ignore
-    path_field.value = "/tmp/new_app"
+    # path_field.value = "/tmp/new_app" # auto-generated
     # repo_field.value = "" # default empty
 
     # IMPORTANT: Flet controls check if they are added to a page before update() is called.
     # In this test environment with mocks, we need to ensure the controls think they are attached.
     # We can mock the `page` property or `_Control__page` private attribute.
-    name_field._Control__page = mock_page
-    desc_field._Control__page = mock_page
-    path_field._Control__page = mock_page
-    repo_field._Control__page = mock_page
+    # name_field._Control__page = mock_page
+    # desc_field._Control__page = mock_page
+    # repo_field._Control__page = mock_page
 
     # Find Create button in actions
     create_btn = dialog.actions[1]  # type: ignore
@@ -185,7 +184,7 @@ def test_create_project_flow(mock_pm_cls):
         name="New App",
         description="My Description",
         owner_id="user1",
-        path="/tmp/new_app",
+        # path="/tmp/new_app", # removed
         repo_url=None,
     )
 

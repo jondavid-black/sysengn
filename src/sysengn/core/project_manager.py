@@ -1,5 +1,8 @@
 import sqlite3
 import uuid
+import os
+import subprocess
+from pathlib import Path
 from datetime import datetime
 from typing import Optional, List
 import logging
@@ -13,15 +16,15 @@ logger = logging.getLogger(__name__)
 class ProjectManager:
     """Manages project-related operations."""
 
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(self, db_path: Optional[str] = None, root_dir: str | Path = "."):
         self.db_path = db_path
+        self.root_dir = str(root_dir)
 
     def create_project(
         self,
         name: str,
         description: str,
         owner_id: str,
-        path: str,
         repo_url: str | None = None,
     ) -> Project:
         """Creates a new project.
@@ -30,13 +33,61 @@ class ProjectManager:
             name: The name of the project.
             description: A description of the project.
             owner_id: The ID of the user creating the project.
-            path: The file system path to the project.
             repo_url: Optional remote git repository URL.
 
         Returns:
             The created Project object.
         """
         project_id = str(uuid.uuid4())
+
+        # Calculate path: root_dir/owner_id/name
+        project_path = os.path.join(self.root_dir, owner_id, name)
+
+        # Ensure directory exists
+        try:
+            os.makedirs(project_path, exist_ok=True)
+        except OSError as e:
+            logger.error(f"Error creating project directory {project_path}: {e}")
+            raise
+
+        # Git Integration
+        try:
+            if repo_url:
+                # Clone repo
+                # Check if directory is not empty (except .git if it exists? no, create just made it or it existed)
+                if any(os.scandir(project_path)):
+                    # If directory is not empty, git clone will fail unless the directory is empty.
+                    # We'll let git clone fail naturally or we could check specifically.
+                    # But common behavior is to expect empty dir for clone.
+                    # However, os.makedirs(exist_ok=True) might imply we are reusing.
+                    # If reusing, and it has stuff, we might want to skip clone or error out.
+                    pass
+
+                logger.info(f"Cloning {repo_url} into {project_path}")
+                subprocess.run(
+                    ["git", "clone", repo_url, project_path],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+            else:
+                # Init new repo
+                logger.info(f"Initializing git repo in {project_path}")
+                # Use cwd to run init inside the directory
+                subprocess.run(
+                    ["git", "init"],
+                    cwd=project_path,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Git operation failed: {e.stderr}")
+            # If git fails, we probably shouldn't create the DB entry?
+            # Or should we clean up?
+            # For now, let's propagate the failure so the caller knows.
+            raise Exception(f"Git operation failed: {e.stderr}") from e
+
         now = datetime.now()
 
         conn = get_connection(self.db_path)
@@ -54,7 +105,7 @@ class ProjectManager:
                     description,
                     "Active",
                     owner_id,
-                    path,
+                    project_path,
                     repo_url,
                     now.isoformat(),
                     now.isoformat(),
@@ -68,7 +119,7 @@ class ProjectManager:
                 description=description,
                 status="Active",
                 owner_id=owner_id,
-                path=path,
+                path=project_path,
                 repo_url=repo_url,
                 created_at=now,
                 updated_at=now,
