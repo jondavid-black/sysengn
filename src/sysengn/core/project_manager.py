@@ -16,8 +16,13 @@ logger = logging.getLogger(__name__)
 class ProjectManager:
     """Manages project-related operations."""
 
-    def __init__(self, db_path: Optional[str] = None, root_dir: str | Path = "."):
+    def __init__(
+        self, db_path: Optional[str] = None, root_dir: str | Path | None = None
+    ):
         self.db_path = db_path
+        if root_dir is None:
+            # Fallback to env var if not explicitly provided
+            root_dir = os.environ.get("SYSENGN_WORKDIR", ".")
         self.root_dir = str(root_dir)
 
     def create_project(

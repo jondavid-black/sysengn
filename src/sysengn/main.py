@@ -454,7 +454,15 @@ def main() -> None:
         action="store_true",
         help="Allow email/password login (Testing only)",
     )
+    parser.add_argument(
+        "--workdir",
+        default=".",
+        help="The working directory for projects (default: current directory)",
+    )
     args = parser.parse_args()
+
+    # Store workdir in environment for global access by ProjectManager
+    os.environ["SYSENGN_WORKDIR"] = os.path.abspath(args.workdir)
 
     def app_main(page: ft.Page):
         # Initialize database
