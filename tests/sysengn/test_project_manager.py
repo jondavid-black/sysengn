@@ -1,6 +1,7 @@
 import pytest
 import sqlite3
 import os
+import subprocess
 from unittest.mock import MagicMock, patch
 from datetime import datetime
 from sysengn.core.project_manager import ProjectManager
@@ -47,6 +48,32 @@ def test_create_project(mock_run, project_manager):
     mock_run.assert_called_with(
         ["git", "init"], cwd=expected_path, check=True, capture_output=True, text=True
     )
+    # Verify directory was created
+    assert os.path.exists(expected_path)
+    assert os.path.isdir(expected_path)
+
+
+@patch("subprocess.run")
+def test_create_project_git_error(mock_run, project_manager):
+    """Test handling of git init failure."""
+    mock_run.side_effect = subprocess.CalledProcessError(
+        1, ["git", "init"], stderr="Git error"
+    )
+
+    with pytest.raises(Exception) as excinfo:
+        project_manager.create_project(
+            name="Fail Project",
+            description="A failed project",
+            owner_id="user1",
+        )
+
+    assert "Git operation failed" in str(excinfo.value)
+
+    # Verify no DB entry was created (rollback or never inserted)
+    # Since the git op happens before DB insert in the code, this is implicit,
+    # but good to verify the state.
+    projects = project_manager.get_all_projects()
+    assert len(projects) == 0
 
 
 @patch("subprocess.run")
