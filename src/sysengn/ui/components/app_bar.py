@@ -10,17 +10,45 @@ from sysengn.core.project_manager import ProjectManager
 
 
 class SysEngnAppBar(ft.Container):
+    """The main application bar component for SysEngn.
+
+    This component provides navigation tabs, user profile access, project selection,
+    and global actions like theme toggling and search.
+
+    Attributes:
+        page_ref (ft.Page): Reference to the main Flet page.
+        user (User): The currently logged-in user.
+        on_tab_change (Callable[[int], None]): Callback triggered when switching tabs.
+        tabs_list (list[str]): List of tab names to display.
+        on_logout (Callable[[], None]): Callback triggered on logout.
+        on_profile (Callable[[], None]): Callback triggered to view profile.
+        on_admin (Callable[[], None] | None): Callback triggered to view admin panel.
+        logo_path (str): Path to the application logo image.
+    """
+
     def __init__(
         self,
         page: ft.Page,
         user: User,
+        logo_path: str,
         on_tab_change: Callable[[int], None],
         tabs: list[str],
         on_logout: Callable[[], None],
         on_profile: Callable[[], None],
         on_admin: Callable[[], None] | None = None,
-        logo_path: str = "sysengn_logo_core_tiny_transparent.png",
     ):
+        """Initialize the application bar.
+
+        Args:
+            page: Reference to the main Flet page.
+            user: The currently logged-in user model.
+            logo_path: Path to the logo image asset.
+            on_tab_change: Function to call when a tab is clicked.
+            tabs: List of strings representing tab labels.
+            on_logout: Function to call when logout is requested.
+            on_profile: Function to call when profile is requested.
+            on_admin: Optional function to call when admin panel is requested.
+        """
         super().__init__()
         self.page_ref = page
         self.user = user

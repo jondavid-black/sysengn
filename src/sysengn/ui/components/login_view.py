@@ -4,7 +4,19 @@ from sysengn.core.auth import authenticate_local_user
 
 
 class LoginView(ft.Column):
-    """A reusable login component."""
+    """A reusable login component handling both local and OAuth authentication.
+
+    This component renders a login form with support for email/password authentication
+    and OAuth providers like Google and GitHub.
+
+    Attributes:
+        page_ref (ft.Page): Reference to the main Flet page.
+        on_login_success (Callable[[], None]): Callback triggered on successful login.
+        icon_path (str): Path to the application icon.
+        app_name (str): Name of the application displayed in the header.
+        allow_passwords (bool): Whether to enable email/password login.
+        oauth_providers (list[Any]): List of configured OAuth providers.
+    """
 
     def __init__(
         self,
@@ -15,6 +27,16 @@ class LoginView(ft.Column):
         allow_passwords: bool = False,
         oauth_providers: list[Any] | None = None,
     ):
+        """Initialize the login view.
+
+        Args:
+            page: Reference to the main Flet page.
+            on_login_success: Function to call when login succeeds.
+            icon: Path to the icon image asset.
+            app_name: Name of the application to display.
+            allow_passwords: If True, shows email/password fields. Defaults to False.
+            oauth_providers: Optional list of OAuth provider objects.
+        """
         super().__init__()
         self.page_ref = page
         self.on_login_success = on_login_success
@@ -101,9 +123,22 @@ class LoginView(ft.Column):
         return content
 
     def handle_oauth_login(self, provider):
+        """Initiates the OAuth login flow for the selected provider.
+
+        Args:
+            provider: The OAuth provider instance to authenticate with.
+        """
         self.page_ref.login(provider)  # type: ignore
 
     def handle_local_login(self, e):
+        """Handles the local email/password login submission.
+
+        Validates the input fields and attempts to authenticate the user against
+        the local database.
+
+        Args:
+            e: The event object that triggered the login (e.g., button click or enter key).
+        """
         if not self.email_field.value or not self.password_field.value:
             self.page_ref.overlay.append(
                 ft.SnackBar(ft.Text("Please enter email and password"), open=True)
