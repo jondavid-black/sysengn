@@ -7,7 +7,7 @@ class TerminalComponent(ft.Container):
     """A terminal component that displays output using pyte for VT100 emulation."""
 
     # Heuristic character dimensions for monospace font
-    CHAR_WIDTH = 8.5
+    CHAR_WIDTH = 8
     CHAR_HEIGHT = 18
 
     def __init__(self, cols: int = 80, rows: int = 24, **kwargs) -> None:
@@ -16,7 +16,7 @@ class TerminalComponent(ft.Container):
         self.rows = rows
 
         # Initialize pyte screen and stream
-        self.screen = pyte.Screen(self.cols, self.rows)
+        self.screen = pyte.HistoryScreen(self.cols, self.rows, history=1000)
         self.stream = pyte.Stream(self.screen)
 
         self.shell: ShellManager | None = None
@@ -24,19 +24,11 @@ class TerminalComponent(ft.Container):
         # Create text controls for each row
         self.terminal_lines = []
         for _ in range(self.rows):
-            self.terminal_lines.append(
-                ft.Text(
-                    value="",
-                    font_family="monospace",
-                    size=14,
-                    no_wrap=True,
-                    color=ft.Colors.WHITE,
-                )
-            )
+            self.terminal_lines.append(self._create_empty_line())
 
         self.expand = True
         self.bgcolor = "#1e1e1e"
-        self.padding = 10
+        self.padding = 5
         self.border_radius = 5
 
         self.content = ft.Column(
@@ -50,6 +42,15 @@ class TerminalComponent(ft.Container):
         self.focused = False
         self.on_click = self._on_click
         self.border = ft.border.all(2, ft.Colors.TRANSPARENT)
+
+    def _create_empty_line(self) -> ft.Text:
+        return ft.Text(
+            value="",
+            font_family="monospace",
+            size=14,
+            no_wrap=True,
+            color=ft.Colors.WHITE,
+        )
 
     def did_mount(self) -> None:
         """Called when the control is added to the page."""
@@ -85,8 +86,9 @@ class TerminalComponent(ft.Container):
 
         # If height is provided, calculate rows, otherwise keep current rows
         if height is not None:
-            # Subtract padding (top+bottom = 20) from height before calculating rows
-            available_height = height - (self.padding * 2 if self.padding else 20)
+            # Subtract padding (top+bottom = 10 from self.padding*2) from height before calculating rows
+            # Padding is 5 now, so 10.
+            available_height = height - (self.padding * 2 if self.padding else 10)
             rows = int(available_height / self.CHAR_HEIGHT)
         else:
             rows = self.rows
@@ -99,23 +101,8 @@ class TerminalComponent(ft.Container):
             self.screen.resize(self.rows, self.cols)
             self.shell.resize(self.rows, self.cols)
 
-            # Recreate lines if rows changed
-            if len(self.terminal_lines) != self.rows:
-                self.terminal_lines.clear()
-                for _ in range(self.rows):
-                    self.terminal_lines.append(
-                        ft.Text(
-                            value="",
-                            font_family="monospace",
-                            size=14,
-                            no_wrap=True,
-                            color=ft.Colors.WHITE,
-                        )
-                    )
-                # Update content column
-                if isinstance(self.content, ft.Column):
-                    self.content.controls = self.terminal_lines
-                    self.content.update()
+            # We no longer manually clear/recreate lines here because _update_display
+            # handles the variable length (history + buffer).
 
             self._update_display()
 
@@ -192,25 +179,65 @@ class TerminalComponent(ft.Container):
         self.page.run_task(update_ui)
 
     def _update_display(self) -> None:
-        """Update the UI controls based on the current screen buffer."""
-        for y in range(self.rows):
-            if y < len(self.terminal_lines):
-                spans = self._render_line(y)
-                self.terminal_lines[y].spans = spans
-                self.terminal_lines[y].value = None  # Clear value when using spans
-                self.terminal_lines[y].update()
+        """Update the UI controls based on the current screen buffer and history."""
+        # Combine history (deque) and current buffer (dictionary-like lines)
+        # screen.history is a named tuple (top, bottom, ...). top contains scrolled-off lines.
+        history_lines = list(self.screen.history.top)
+        buffer_lines = [self.screen.buffer[i] for i in range(self.rows)]
+        all_lines = history_lines + buffer_lines
 
-    def _render_line(self, y: int) -> list[ft.TextSpan]:
-        """Render a single line from the pyte buffer into TextSpans."""
+        total_lines_needed = len(all_lines)
+
+        # Adjust UI control count
+        while len(self.terminal_lines) < total_lines_needed:
+            new_line = self._create_empty_line()
+            self.terminal_lines.append(new_line)
+            if isinstance(self.content, ft.Column):
+                self.content.controls.append(new_line)
+
+        # (Optional) If we wanted to shrink, we could, but history usually grows.
+
+        # Update existing controls
+        for i, line_data in enumerate(all_lines):
+            # Render the line data into spans
+            spans = self._render_line_data(line_data)
+            self.terminal_lines[i].spans = spans
+            self.terminal_lines[i].value = None
+            self.terminal_lines[i].update()
+
+        # Update column layout if controls were added
+        if isinstance(self.content, ft.Column):
+            self.content.update()
+
+        # Auto-scroll to bottom
+        if isinstance(self.content, ft.Column):
+            self.content.scroll_to(offset=float("inf"), duration=10)
+
+    def _render_line_data(self, line) -> list[ft.TextSpan]:
+        """Render a single line object (from history or buffer) into TextSpans."""
         spans = []
-        line = self.screen.buffer[y]
+        # line can be from history (pyte.screens.Line) or buffer (pyte.screens.Line usually)
+        # pyte buffer is indexable by column, history lines are also indexable or iterable char objects
 
         current_text = ""
         current_fg = None
 
-        # Iterate through columns
+        # We iterate up to self.cols.
+        # Note: History lines might have different length if resized, but usually match at creation.
+        # Safest to iterate up to the line's length or self.cols
+
+        # pyte Line acts like a dict {col: Char}.
+        # But history lines are often stored as specific objects.
+        # Let's handle both dictionary-like buffer and potentially different history objects.
+
         for x in range(self.cols):
-            char = line.get(x, self.screen.default_char)
+            # Direct access to check key existence
+            # pyte Line is a dict of {column_index: Char}
+            if x in line:
+                char = line[x]
+            else:
+                char = self.screen.default_char
+
             fg = self._map_color(char.fg)
 
             # Check if style changed
@@ -233,6 +260,10 @@ class TerminalComponent(ft.Container):
             )
 
         return spans
+
+    def _render_line(self, y: int) -> list[ft.TextSpan]:
+        """Legacy wrapper - shouldn't be called directly now but keeping for safety."""
+        return self._render_line_data(self.screen.buffer[y])
 
     def _map_color(self, color: str) -> str:
         """Map pyte color names to Flet colors."""
