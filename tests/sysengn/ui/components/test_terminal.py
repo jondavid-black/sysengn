@@ -23,10 +23,15 @@ def test_terminal_mount_unmount(terminal_component):
     with patch("sysengn.ui.components.terminal.ShellManager") as MockShellManager:
         mock_shell_instance = MockShellManager.return_value
 
+        # Mock input_control.focus to avoid "Control must be added to the page" error
+        terminal_component.input_control.focus = MagicMock()
+
         terminal_component.did_mount()
 
         assert terminal_component.shell is not None
         MockShellManager.assert_called_once()
+        # Verify focus was called
+        terminal_component.input_control.focus.assert_called_once()
 
         terminal_component.will_unmount()
         mock_shell_instance.close.assert_called_once()
@@ -65,8 +70,14 @@ async def test_terminal_output_update(terminal_component):
 
     # Verify controls were updated
     assert len(terminal_component.output_control.controls) == 1
-    assert isinstance(terminal_component.output_control.controls[0], ft.Text)
-    assert terminal_component.output_control.controls[0].value == test_output
+    text_control = terminal_component.output_control.controls[0]
+    assert isinstance(text_control, ft.Text)
+
+    # Updated verification: check spans instead of value
+    # With the new ANSI parsing logic, plain text becomes a span
+    assert text_control.spans is not None
+    assert len(text_control.spans) == 1
+    assert text_control.spans[0].text == test_output
 
     # Verify update() was called
     terminal_component.output_control.update.assert_called_once()
