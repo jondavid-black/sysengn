@@ -7,7 +7,7 @@ class TerminalComponent(ft.Container):
     """A terminal component that displays output using pyte for VT100 emulation."""
 
     # Heuristic character dimensions for monospace font
-    CHAR_WIDTH = 9
+    CHAR_WIDTH = 8.5
     CHAR_HEIGHT = 18
 
     def __init__(self, cols: int = 80, rows: int = 24, **kwargs) -> None:
@@ -176,6 +176,8 @@ class TerminalComponent(ft.Container):
 
         # Normal characters
         if len(e.key) == 1:
+            if not e.shift and e.key.isalpha():
+                return e.key.lower()
             return e.key
 
         return ""

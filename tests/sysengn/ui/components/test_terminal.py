@@ -252,23 +252,24 @@ def test_terminal_resize(terminal_component):
     assert terminal_component.rows == 24
 
     # Resize width only (calculating cols from width / CHAR_WIDTH)
-    # CHAR_WIDTH = 9. So 900 width -> 100 cols
+    # CHAR_WIDTH = 8.5. So 900 width -> ~105 cols
     terminal_component.handle_resize(900)
 
-    assert terminal_component.cols == 100
+    assert terminal_component.cols == 105
     # Rows shouldn't change if height not provided
     assert terminal_component.rows == 24
 
     # Verify shell.resize called
-    mock_shell.resize.assert_called_with(24, 100)
+    mock_shell.resize.assert_called_with(24, 105)
     terminal_component._update_display.assert_called()
 
     # Resize both
     # CHAR_HEIGHT = 18. So 540 height -> 30 rows
     terminal_component.handle_resize(450, 540)
 
-    assert terminal_component.cols == 50  # 450/9 = 50
+    # 450 / 8.5 = 52.94 -> 52
+    assert terminal_component.cols == 52
     assert terminal_component.rows == 30  # 540/18 = 30
 
     # Verify shell.resize called with new values
-    mock_shell.resize.assert_called_with(30, 50)
+    mock_shell.resize.assert_called_with(30, 52)
