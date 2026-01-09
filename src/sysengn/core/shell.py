@@ -69,9 +69,6 @@ class ShellManager:
         if not self.running or self.master_fd is None:
             return
 
-        if not command.endswith("\n"):
-            command += "\n"
-
         try:
             os.write(self.master_fd, command.encode("utf-8"))
         except OSError as e:
