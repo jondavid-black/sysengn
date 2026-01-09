@@ -41,15 +41,91 @@ class TerminalComponent(ft.Container):
             expand=True,
         )
 
+        # Input handling
+        self.focused = False
+        self.on_click = self._on_click
+        self.border = ft.border.all(2, ft.Colors.TRANSPARENT)
+
     def did_mount(self) -> None:
         """Called when the control is added to the page."""
         self.shell = ShellManager(on_output=self._on_shell_output)
-        # Note: Input handling is deferred to a future task.
+        if self.page:
+            self.page.on_keyboard_event = self._on_key  # type: ignore
 
     def will_unmount(self) -> None:
         """Called when the control is removed from the page."""
         if self.shell:
             self.shell.close()
+        if self.page:
+            self.page.on_keyboard_event = None  # type: ignore
+
+    def _on_click(self, e: ft.ControlEvent) -> None:
+        """Handle click to focus/unfocus."""
+        self.set_focus(not self.focused)
+
+    def set_focus(self, focused: bool) -> None:
+        """Set the focus state of the terminal."""
+        self.focused = focused
+        self.border = ft.border.all(
+            2, ft.Colors.BLUE if self.focused else ft.Colors.TRANSPARENT
+        )
+        self.update()
+
+    def _on_key(self, e: ft.KeyboardEvent) -> None:
+        """Handle keyboard events."""
+        if not self.focused or not self.shell:
+            return
+
+        data = self._map_key(e)
+        if data:
+            self.shell.write(data)
+
+    def _map_key(self, e: ft.KeyboardEvent) -> str:
+        """Map Flet key events to ANSI sequences."""
+        if e.key == "Enter":
+            return "\r"
+        elif e.key == "Backspace":
+            return "\x7f"
+        elif e.key == "Tab":
+            return "\t"
+        elif e.key == "Escape":
+            return "\x1b"
+        elif e.key == "Arrow Up":
+            return "\x1b[A"
+        elif e.key == "Arrow Down":
+            return "\x1b[B"
+        elif e.key == "Arrow Right":
+            return "\x1b[C"
+        elif e.key == "Arrow Left":
+            return "\x1b[D"
+        elif e.key == "Home":
+            return "\x1b[H"
+        elif e.key == "End":
+            return "\x1b[F"
+        elif e.key == "Page Up":
+            return "\x1b[5~"
+        elif e.key == "Page Down":
+            return "\x1b[6~"
+        elif e.key == "Space" or e.key == " ":
+            return " "
+
+        # Ctrl shortcuts
+        if e.ctrl:
+            if e.key.upper() == "C":
+                return "\x03"
+            if e.key.upper() == "D":
+                return "\x04"
+            if e.key.upper() == "Z":
+                return "\x1a"
+            if e.key.upper() == "L":
+                return "\x0c"
+            return ""
+
+        # Normal characters
+        if len(e.key) == 1:
+            return e.key
+
+        return ""
 
     def _on_shell_output(self, text: str) -> None:
         """Callback for shell output."""
