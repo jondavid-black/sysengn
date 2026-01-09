@@ -58,6 +58,20 @@ def init_db(db_path: str | Path | None = None) -> None:
             )
         """)
 
+        # Migration: Check for missing columns in existing table (Dev mode migration)
+        cursor.execute("PRAGMA table_info(projects)")
+        columns = [info[1] for info in cursor.fetchall()]
+
+        if "path" not in columns:
+            logger.info("Migrating database: Adding 'path' column to projects table")
+            cursor.execute("ALTER TABLE projects ADD COLUMN path TEXT")
+
+        if "repo_url" not in columns:
+            logger.info(
+                "Migrating database: Adding 'repo_url' column to projects table"
+            )
+            cursor.execute("ALTER TABLE projects ADD COLUMN repo_url TEXT")
+
         conn.commit()
     except sqlite3.Error as e:
         logger.error(f"Error initializing database: {e}")
