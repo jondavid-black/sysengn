@@ -181,6 +181,7 @@ def main_page(page: ft.Page) -> None:
     app_bar = SysEngnAppBar(
         page=page,
         user=user,
+        logo_path="sysengn_logo_core_tiny_transparent.png",
         on_tab_change=change_tab,
         tabs=tabs_list,
         on_logout=lambda: logout(page),
