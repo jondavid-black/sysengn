@@ -258,6 +258,8 @@ def main() -> None:
             page,
             on_login_success=lambda: main_page(page),
             allow_passwords=args.allow_passwords,
+            app_name="SysEngn",
+            icon="sysengn_splash.png",
         )
 
     view = ft.AppView.WEB_BROWSER if args.web else ft.AppView.FLET_APP
