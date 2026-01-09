@@ -211,34 +211,33 @@ def main_page(page: ft.Page) -> None:
 
     page.clean()
 
-    # Main Layout
-    main_layout = ft.Column(
-        controls=[app_bar, content_area],
-        expand=True,
-        spacing=0,
-    )
+    # Main Layout Logic
 
-    # We wrap the main layout in a container that expands
-    main_container = ft.Container(
-        content=main_layout,
-        expand=True,
-    )
+    # We want the AppBar to be always visible and on top (Z-index wise relative to siblings in a Column)
+    # The TerminalPanel should overlay the ContentArea but NOT the AppBar.
+    # So we structure it as:
+    # Column(
+    #   AppBar,
+    #   Stack(ContentArea, TerminalPanel)
+    # )
 
-    # The Overlay Layer
-    # We add terminal_panel directly to the Stack.
-    # By setting right=0, top=0, bottom=0, it docks to the right and stretches vertically.
-    # Since it is a Row (ResizeableSidePanel), its width is determined by its content.
-    # This prevents it from blocking clicks on the rest of the screen.
-
-    stack = ft.Stack(
+    # The Overlay Layer (Content + Terminal)
+    content_stack = ft.Stack(
         controls=[
-            main_container,
+            content_area,
             terminal_panel,
         ],
         expand=True,
     )
 
-    page.add(stack)
+    # Main Layout
+    main_layout = ft.Column(
+        controls=[app_bar, content_stack],
+        expand=True,
+        spacing=0,
+    )
+
+    page.add(main_layout)
 
 
 def back_to_main(page: ft.Page):

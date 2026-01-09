@@ -39,8 +39,31 @@ class ResizeableSidePanel(ft.Row):
         )
 
         # The content container
+        # Header with close button
+        close_button = ft.IconButton(
+            icon=ft.Icons.CLOSE,
+            icon_size=20,
+            tooltip="Close Panel",
+            on_click=lambda _: self.toggle(),
+            icon_color=ft.Colors.WHITE,
+        )
+
+        header_row = ft.Row(
+            controls=[ft.Container(expand=True), close_button],
+            alignment=ft.MainAxisAlignment.END,
+        )
+
+        self.inner_column = ft.Column(
+            controls=[
+                header_row,
+                ft.Container(content=self.content_control, expand=True),
+            ],
+            spacing=0,
+            expand=True,
+        )
+
         self.content_container = ft.Container(
-            content=self.content_control,
+            content=self.inner_column,
             width=self.current_width,
             bgcolor="#1e1e1e",  # Matches TerminalComponent background
             expand=True,  # Allow vertical expansion
