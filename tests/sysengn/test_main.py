@@ -69,12 +69,20 @@ def test_main_page_authenticated_session():
     # New layout doesn't just add text directly, it adds a column with banner and content
     # Checking for specific text "Logged in as" is outdated since we have a banner now
 
-    # Check that we added the main Column layout
+    # Check that we added the main Stack layout
     assert mock_page.add.called
-    main_column = mock_page.add.call_args[0][0]
+    main_stack = mock_page.add.call_args[0][0]
+    assert isinstance(main_stack, ft.Stack)
+
+    # The main column is inside the stack (first element)
+    # The first element is a Container wrapping the column
+    main_container = main_stack.controls[0]
+    assert isinstance(main_container, ft.Container)
+
+    main_column = main_container.content
     assert isinstance(main_column, ft.Column)
 
-    # Banner should be first
+    # Banner should be first in the main column
     assert len(main_column.controls) >= 2
 
 
@@ -109,7 +117,15 @@ def test_main_page_authenticated_flet_auth():
 
     # Same check as above - verify structure not specific text
     assert mock_page.add.called
-    main_column = mock_page.add.call_args[0][0]
+    main_stack = mock_page.add.call_args[0][0]
+    assert isinstance(main_stack, ft.Stack)
+
+    # The main column is inside the stack
+    # The first element is a Container wrapping the column
+    main_container = main_stack.controls[0]
+    assert isinstance(main_container, ft.Container)
+
+    main_column = main_container.content
     assert isinstance(main_column, ft.Column)
 
 
