@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 import flet as ft
 
 
@@ -14,6 +16,7 @@ class ResizeableSidePanel(ft.Row):
         min_width: float = 200,
         max_width: float = 800,
         visible: bool = False,
+        on_resize: Callable[[float], None] | None = None,
     ):
         super().__init__()
         self.content_control = content
@@ -21,6 +24,7 @@ class ResizeableSidePanel(ft.Row):
         self.min_width = min_width
         self.max_width = max_width
         self.visible = visible
+        self.on_resize = on_resize
 
         # Layout configuration
         self.spacing = 0
@@ -84,6 +88,9 @@ class ResizeableSidePanel(ft.Row):
 
         self.content_container.width = self.current_width
         self.content_container.update()
+
+        if self.on_resize:
+            self.on_resize(self.current_width)
 
     def toggle(self) -> None:
         """Toggle the visibility of the panel."""

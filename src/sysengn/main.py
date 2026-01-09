@@ -181,9 +181,11 @@ def main_page(page: ft.Page) -> None:
     tabs_list = ["Home", "MBSE", "UX", "Docs"]
 
     # -- Custom Overlay / Layout Components --
+    terminal_component = TerminalComponent()
     terminal_panel = ResizeableSidePanel(
-        content=TerminalComponent(),
+        content=terminal_component,
         visible=False,
+        on_resize=lambda w: terminal_component.handle_resize(w),
     )
     # Position the panel on the right side of the Stack
     terminal_panel.right = 0

@@ -6,6 +6,10 @@ from sysengn.core.shell import ShellManager
 class TerminalComponent(ft.Container):
     """A terminal component that displays output using pyte for VT100 emulation."""
 
+    # Heuristic character dimensions for monospace font
+    CHAR_WIDTH = 9
+    CHAR_HEIGHT = 18
+
     def __init__(self, cols: int = 80, rows: int = 24, **kwargs) -> None:
         super().__init__(**kwargs)
         self.cols = cols
@@ -70,6 +74,53 @@ class TerminalComponent(ft.Container):
             2, ft.Colors.BLUE if self.focused else ft.Colors.TRANSPARENT
         )
         self.update()
+
+    def handle_resize(self, width: float, height: float | None = None) -> None:
+        """Handle resize events to update terminal dimensions."""
+        if not self.shell:
+            return
+
+        cols = int(width / self.CHAR_WIDTH)
+
+        # If height is provided, calculate rows, otherwise keep current rows
+        # For now, we mainly resize width via the side panel
+        # But we could also calculate rows if we knew the container height
+        if height is not None:
+            rows = int(height / self.CHAR_HEIGHT)
+        else:
+            # Fallback or keep current.
+            # Ideally we should use the height of the container if possible.
+            # But the side panel currently only resizes width.
+            # So we'll stick with current rows unless we get a height update.
+            rows = self.rows
+
+        # Only update if changed
+        if cols != self.cols or rows != self.rows:
+            self.cols = max(10, cols)  # Minimum width
+            self.rows = max(5, rows)  # Minimum height
+
+            self.screen.resize(self.rows, self.cols)
+            self.shell.resize(self.rows, self.cols)
+
+            # Recreate lines if rows changed
+            if len(self.terminal_lines) != self.rows:
+                self.terminal_lines.clear()
+                for _ in range(self.rows):
+                    self.terminal_lines.append(
+                        ft.Text(
+                            value="",
+                            font_family="monospace",
+                            size=14,
+                            no_wrap=True,
+                            color=ft.Colors.WHITE,
+                        )
+                    )
+                # Update content column
+                if isinstance(self.content, ft.Column):
+                    self.content.controls = self.terminal_lines
+                    self.content.update()
+
+            self._update_display()
 
     def _on_key(self, e: ft.KeyboardEvent) -> None:
         """Handle keyboard events."""
