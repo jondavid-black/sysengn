@@ -36,7 +36,7 @@ class SysEngnAppBar(ft.Container):
         on_logout: Callable[[], None],
         on_profile: Callable[[], None],
         on_admin: Callable[[], None] | None = None,
-        on_terminal_toggle: Callable[[], None] | None = None,
+        on_toggle_terminal: Callable[[], None] | None = None,
     ):
         """Initialize the application bar.
 
@@ -49,7 +49,7 @@ class SysEngnAppBar(ft.Container):
             on_logout: Function to call when logout is requested.
             on_profile: Function to call when profile is requested.
             on_admin: Optional function to call when admin panel is requested.
-            on_terminal_toggle: Optional function to call when terminal button is clicked.
+            on_toggle_terminal: Optional function to call when terminal button is clicked.
         """
         super().__init__()
         self.page_ref = page
@@ -60,7 +60,7 @@ class SysEngnAppBar(ft.Container):
         self.on_profile = on_profile
         self.on_admin = on_admin
         self.logo_path = logo_path
-        self.on_terminal_toggle = on_terminal_toggle
+        self.on_toggle_terminal = on_toggle_terminal
 
         # Exposed controls
         self.tabs_control = self._build_tabs()
@@ -181,8 +181,8 @@ class SysEngnAppBar(ft.Container):
         update_user_theme_preference(self.user.id, self.user.theme_preference)
 
     def _open_terminal(self, e):
-        if self.on_terminal_toggle:
-            self.on_terminal_toggle()
+        if self.on_toggle_terminal:
+            self.on_toggle_terminal()
         else:
             # Fallback for now if not provided, though it shouldn't be
             print("Terminal toggle callback not provided")

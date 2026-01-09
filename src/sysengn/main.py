@@ -185,9 +185,14 @@ def main_page(page: ft.Page) -> None:
         content=TerminalComponent(),
         visible=False,
     )
+    # Position the panel on the right side of the Stack
+    terminal_panel.right = 0
+    terminal_panel.top = 0
+    terminal_panel.bottom = 0
 
     def toggle_terminal():
         terminal_panel.toggle()
+        page.update()
 
     app_bar = SysEngnAppBar(
         page=page,
@@ -198,7 +203,7 @@ def main_page(page: ft.Page) -> None:
         on_logout=lambda: logout(page),
         on_profile=lambda: change_tab(4),
         on_admin=lambda: admin_page(page, lambda: back_to_main(page)),
-        on_terminal_toggle=toggle_terminal,
+        on_toggle_terminal=toggle_terminal,
     )
     app_bar_ref.append(app_bar)
 
@@ -220,79 +225,15 @@ def main_page(page: ft.Page) -> None:
     )
 
     # The Overlay Layer
-    # We use a Row aligned to the END to push the panel to the right.
-    # We set pick_events=False on the Row so clicks pass through the empty space.
-    # However, Flet's Row doesn't support pick_events directly usually, but Container does.
-    # But wait, if we use a Row, the empty space is "transparent" to clicks in many frameworks,
-    # but in Flet/Flutter, it depends on hit testing.
-    # If the Row expands, it covers the screen.
-    # The safest way for "Overlay" that allows clicking behind is to NOT have a full-screen blocker.
-    # BUT, we need the panel to be full height.
-    # The ResizeableSidePanel is a Row itself (from our previous read).
-    # Wait, ResizeableSidePanel inherits from ft.Row.
-    # If we put it in a Stack, and it's not visible, it's fine.
-    # If it is visible, we want it docked right.
-
-    # Let's construct the Stack
-    # Layer 1: Main App
-    # Layer 2: Terminal Panel (docked right)
-
-    # To dock right in a Stack without a full-screen covering row:
-    # We can use `right=0, top=0, bottom=0` if we wrap in `ft.Container` inside Stack?
-    # No, Flet Stack children are just controls.
-    # We can use `left`, `top`, `right`, `bottom` properties on controls inside a Stack?
-    # Yes, controls have these properties but they only work inside a Stack.
-    # Let's check ResizeableSidePanel implementation. It inherits from Row.
-    # We need to wrap it or set its properties.
-    # It's better to wrap it in a Container or just set its alignment.
-
-    # Actually, `ResizeableSidePanel` is a Row.
-    # If we just add it to Stack, it will be at top-left by default (0,0).
-    # We need to position it.
-    # Since `ResizeableSidePanel` is a custom class, let's wrap it in a `Row` that aligns it to end.
-    # This wrapping Row will be the 2nd child of Stack.
-    # DOES THIS BLOCK CLICKS?
-    # If the wrapping Row is `expand=True`, it fills the screen.
-    # If it fills the screen, it might block clicks on the left.
-    # Flet doesn't easily expose "hit test self false" for Rows.
-    #
-    # ALTERNATIVE:
-    # Use `page.overlay.append(terminal_panel)`.
-    # But then positioning is tricky.
-    #
-    # LET'S TRY THE STACK + ROW approach.
-    # If it blocks, the user has to close terminal to interact with app.
-    # This is an acceptable "Mode" for now.
-
-    terminal_layer = ft.Row(
-        controls=[terminal_panel],
-        alignment=ft.MainAxisAlignment.END,
-        vertical_alignment=ft.CrossAxisAlignment.STRETCH,
-        expand=True,
-        # If we could set pick_events=False here, we would, but Row doesn't have it.
-        # We can try wrapping in a transparent Container with on_click=None? No.
-    )
-
-    # Since `terminal_panel` manages its own visibility,
-    # we can just toggle `visible` on the panel itself.
-    # When `visible=False`, the Row is effectively empty/collapsed?
-    # No, if Row has expand=True, it might still take space.
-    # We should bind the visibility of the `terminal_layer` to `terminal_panel.visible`.
-    # Or just let `terminal_panel` be the only child.
-
-    # Let's bind the visibility of the layer to the panel.
-    # Actually, we can just make the `terminal_layer` *be* the `terminal_panel` if we
-    # modify `ResizeableSidePanel` to be a generic container we can position?
-    # It is a `Row`.
-
-    # Simple approach:
-    # Stack([Main, Row(alignment=END, controls=[Panel])])
-    # The Panel handles its own width. The Row handles positioning.
+    # We add terminal_panel directly to the Stack.
+    # By setting right=0, top=0, bottom=0, it docks to the right and stretches vertically.
+    # Since it is a Row (ResizeableSidePanel), its width is determined by its content.
+    # This prevents it from blocking clicks on the rest of the screen.
 
     stack = ft.Stack(
         controls=[
             main_container,
-            terminal_layer,
+            terminal_panel,
         ],
         expand=True,
     )
