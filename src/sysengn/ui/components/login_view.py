@@ -12,7 +12,7 @@ class LoginView(ft.Column):
     Attributes:
         page_ref (ft.Page): Reference to the main Flet page.
         on_login_success (Callable[[], None]): Callback triggered on successful login.
-        icon_path (str): Path to the application icon.
+        icon (str): Path to the application icon.
         app_name (str): Name of the application displayed in the header.
         allow_passwords (bool): Whether to enable email/password login.
         oauth_providers (list[Any]): List of configured OAuth providers.
