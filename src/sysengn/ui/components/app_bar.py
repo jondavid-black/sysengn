@@ -7,6 +7,7 @@ from sysengn.core.auth import (
     update_user_theme_preference,
 )
 from sysengn.core.project_manager import ProjectManager
+from sysengn.ui.components.terminal import TerminalComponent
 
 
 class SysEngnAppBar(ft.Container):
@@ -177,6 +178,27 @@ class SysEngnAppBar(ft.Container):
         )
         update_user_theme_preference(self.user.id, self.user.theme_preference)
 
+    def _open_terminal(self, e):
+        # Calculate 50% of the page height or default to 400
+        height = self.page_ref.height * 0.5 if self.page_ref.height else 400
+
+        term = TerminalComponent(height=height)
+
+        # Use BottomSheet for the terminal
+        # Using a Container inside BottomSheet to ensure background color and sizing
+        bottom_sheet = ft.BottomSheet(
+            content=ft.Container(
+                content=term,
+                padding=0,
+                bgcolor=ft.Colors.BLACK,
+            ),
+            open=True,
+            on_dismiss=lambda _: None,  # Optional: handle dismiss
+            enable_drag=True,
+            show_drag_handle=True,
+        )
+        self.page_ref.open(bottom_sheet)
+
     def _build_content(self):
         # Left: Icon, Name, Project Dropdown, Workspace Dropdown
         project_dropdown = self._build_project_dropdown()
@@ -268,6 +290,13 @@ class SysEngnAppBar(ft.Container):
             )
         )
 
+        terminal_icon = ft.IconButton(
+            ft.Icons.TERMINAL,
+            on_click=self._open_terminal,
+            tooltip="Open Terminal",
+            icon_color=ft.Colors.GREY_400,
+        )
+
         avatar_menu = ft.PopupMenuButton(
             content=self.avatar_control,
             items=menu_items,
@@ -277,6 +306,8 @@ class SysEngnAppBar(ft.Container):
             controls=[
                 search_box,
                 ft.Container(width=10),
+                terminal_icon,
+                ft.Container(width=5),
                 theme_icon,
                 ft.Container(width=10),
                 avatar_menu,
