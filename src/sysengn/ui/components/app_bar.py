@@ -7,7 +7,6 @@ from sysengn.core.auth import (
     update_user_theme_preference,
 )
 from sysengn.core.project_manager import ProjectManager
-from sysengn.ui.components.terminal import TerminalComponent
 
 
 class SysEngnAppBar(ft.Container):
@@ -37,6 +36,7 @@ class SysEngnAppBar(ft.Container):
         on_logout: Callable[[], None],
         on_profile: Callable[[], None],
         on_admin: Callable[[], None] | None = None,
+        on_terminal_toggle: Callable[[], None] | None = None,
     ):
         """Initialize the application bar.
 
@@ -49,6 +49,7 @@ class SysEngnAppBar(ft.Container):
             on_logout: Function to call when logout is requested.
             on_profile: Function to call when profile is requested.
             on_admin: Optional function to call when admin panel is requested.
+            on_terminal_toggle: Optional function to call when terminal button is clicked.
         """
         super().__init__()
         self.page_ref = page
@@ -59,6 +60,7 @@ class SysEngnAppBar(ft.Container):
         self.on_profile = on_profile
         self.on_admin = on_admin
         self.logo_path = logo_path
+        self.on_terminal_toggle = on_terminal_toggle
 
         # Exposed controls
         self.tabs_control = self._build_tabs()
@@ -179,28 +181,11 @@ class SysEngnAppBar(ft.Container):
         update_user_theme_preference(self.user.id, self.user.theme_preference)
 
     def _open_terminal(self, e):
-        # Create Terminal Component
-        # We don't set height so it can expand to fill the drawer
-        term = TerminalComponent()
-
-        # Use NavigationDrawer for the terminal (Left Drawer)
-        drawer = ft.NavigationDrawer(
-            controls=[
-                ft.Container(
-                    content=term,
-                    expand=True,
-                    padding=0,
-                    bgcolor=ft.Colors.BLACK,
-                )
-            ],
-            bgcolor=ft.Colors.BLACK,
-            surface_tint_color=ft.Colors.BLACK,
-        )
-
-        # Assign drawer to page and open it
-        self.page_ref.drawer = drawer
-        self.page_ref.drawer.open = True
-        self.page_ref.update()
+        if self.on_terminal_toggle:
+            self.on_terminal_toggle()
+        else:
+            # Fallback for now if not provided, though it shouldn't be
+            print("Terminal toggle callback not provided")
 
     def _build_content(self):
         # Left: Icon, Name, Project Dropdown, Workspace Dropdown
