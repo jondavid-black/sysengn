@@ -179,25 +179,28 @@ class SysEngnAppBar(ft.Container):
         update_user_theme_preference(self.user.id, self.user.theme_preference)
 
     def _open_terminal(self, e):
-        # Calculate 50% of the page height or default to 400
-        height = self.page_ref.height * 0.5 if self.page_ref.height else 400
+        # Create Terminal Component
+        # We don't set height so it can expand to fill the drawer
+        term = TerminalComponent()
 
-        term = TerminalComponent(height=height)
-
-        # Use BottomSheet for the terminal
-        # Using a Container inside BottomSheet to ensure background color and sizing
-        bottom_sheet = ft.BottomSheet(
-            content=ft.Container(
-                content=term,
-                padding=0,
-                bgcolor=ft.Colors.BLACK,
-            ),
-            open=True,
-            on_dismiss=lambda _: None,  # Optional: handle dismiss
-            enable_drag=True,
-            show_drag_handle=True,
+        # Use NavigationDrawer for the terminal (Left Drawer)
+        drawer = ft.NavigationDrawer(
+            controls=[
+                ft.Container(
+                    content=term,
+                    expand=True,
+                    padding=0,
+                    bgcolor=ft.Colors.BLACK,
+                )
+            ],
+            bgcolor=ft.Colors.BLACK,
+            surface_tint_color=ft.Colors.BLACK,
         )
-        self.page_ref.open(bottom_sheet)
+
+        # Assign drawer to page and open it
+        self.page_ref.drawer = drawer
+        self.page_ref.drawer.open = True
+        self.page_ref.update()
 
     def _build_content(self):
         # Left: Icon, Name, Project Dropdown, Workspace Dropdown
