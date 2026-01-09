@@ -108,6 +108,8 @@ class TerminalComponent(ft.Container):
             return "\x1b[6~"
         elif e.key == "Space" or e.key == " ":
             return " "
+        elif e.key == "Delete":
+            return "\x1b[3~"
 
         # Ctrl shortcuts
         if e.ctrl:
