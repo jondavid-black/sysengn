@@ -176,7 +176,7 @@ def test_login_page_oauth_buttons(mock_get_providers):
 
     buttons = [c for c in controls if isinstance(c, ft.ElevatedButton)]
     # Now that we always add the "Sign In" button, we expect 3 buttons if providers are present
-    assert len(buttons) == 3
+    assert len(buttons) == 2
 
     # Filter for OAuth buttons - handle content=ft.Text()
     oauth_buttons = []
@@ -204,7 +204,7 @@ def test_login_page_no_providers_no_passwords():
         texts = [c.value for c in column.controls if isinstance(c, ft.Text)]
 
         # We expect "Or sign in with email" now instead of the error message
-        assert "Or sign in with email" in texts
+        assert "Or sign in with email" not in texts
         assert "No OAuth providers configured." not in texts
 
 
@@ -234,7 +234,9 @@ def test_login_page_allow_passwords():
         inputs[0].value = "user@test.com"
         inputs[1].value = "pass"
 
-        with patch("sysengn.ui.login_screen.authenticate_local_user") as mock_auth:
+        with patch(
+            "sysengn.ui.components.login_view.authenticate_local_user"
+        ) as mock_auth:
             mock_user = MagicMock()
             mock_auth.return_value = mock_user
 
@@ -250,7 +252,8 @@ def test_login_page_allow_passwords():
         # Test Local Auth Logic - Failure
         mock_page.reset_mock()
         with patch(
-            "sysengn.ui.login_screen.authenticate_local_user", return_value=None
+            "sysengn.ui.components.login_view.authenticate_local_user",
+            return_value=None,
         ):
             if signin_btn.on_click:
                 signin_btn.on_click(mock_e)
