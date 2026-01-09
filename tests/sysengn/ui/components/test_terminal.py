@@ -13,7 +13,8 @@ def test_terminal_initialization(terminal_component):
     """Test that the terminal component initializes with correct controls."""
     # Updated expectations for VT100 terminal
     assert isinstance(terminal_component.content, ft.Column)
-    assert len(terminal_component.terminal_lines) == terminal_component.rows
+    assert len(terminal_component.buffer_lines) == terminal_component.rows
+    assert len(terminal_component.history_lines) == 0
     assert terminal_component.shell is None  # Should be None before mount
 
 
@@ -122,7 +123,7 @@ def test_vt100_rendering_colors(terminal_component):
 
     # Mock the update method on terminal lines to avoid "must be added to page" error
     # We need to mock it on the actual objects in the list
-    for line in terminal_component.terminal_lines:
+    for line in terminal_component.buffer_lines:
         line.update = MagicMock()
 
     # Mock content column update and scroll_to
@@ -198,7 +199,7 @@ def test_vt100_rendering_colors(terminal_component):
     # The failing test was test_vt100_rendering_integration.
     # In integration test, we do: terminal_component._on_shell_output("\x1b[31mHello\x1b[0m World")
 
-    first_line = terminal_component.terminal_lines[0]
+    first_line = terminal_component.buffer_lines[0]
 
     # Debug info: print spans if possible (not in test output usually)
     # If spans are empty or whitespace, maybe the loop range(self.cols) is wrong?
@@ -256,7 +257,7 @@ def test_vt100_rendering_colors(terminal_component):
 
     # Let's try to verify if we are looking at the right line.
 
-    first_line = terminal_component.terminal_lines[0]
+    first_line = terminal_component.buffer_lines[0]
     # If the buffer has content, and we iterate 0..rows, line 0 should have "Hello".
 
     pass
@@ -269,13 +270,16 @@ def test_vt100_rendering_integration(terminal_component):
     terminal_component.page = mock_page
 
     # Mock the update method on terminal lines to avoid "must be added to page" error
-    for line in terminal_component.terminal_lines:
+    for line in terminal_component.buffer_lines:
         line.update = MagicMock()
 
     # Mock content column update and scroll_to
     if isinstance(terminal_component.content, ft.Column):
         terminal_component.content.update = MagicMock()
         terminal_component.content.scroll_to = MagicMock()
+        # Mock sub-columns
+        terminal_component.history_column.update = MagicMock()
+        terminal_component.buffer_column.update = MagicMock()
 
     # Patch create empty line
     original_create = terminal_component._create_empty_line
@@ -312,7 +316,7 @@ def test_vt100_rendering_integration(terminal_component):
     assert char0.fg == "red", f"Expected red fg, got '{char0.fg}'"
 
     # Verify first line content
-    first_line = terminal_component.terminal_lines[0]
+    first_line = terminal_component.buffer_lines[0]
 
     # It should use spans now
     assert len(first_line.spans) > 0
@@ -363,6 +367,8 @@ def test_terminal_resize(terminal_component):
     # Mock content column update
     if isinstance(terminal_component.content, ft.Column):
         terminal_component.content.update = MagicMock()
+        terminal_component.buffer_column.update = MagicMock()
+        terminal_component.history_column.update = MagicMock()
 
     # Mock _update_display to avoid rendering issues with new unattached controls
     # We are testing resize logic here, not rendering

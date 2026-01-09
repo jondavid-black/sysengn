@@ -21,10 +21,18 @@ class TerminalComponent(ft.Container):
 
         self.shell: ShellManager | None = None
 
-        # Create text controls for each row
-        self.terminal_lines = []
+        # Create columns for history and buffer
+        self.history_lines: list[ft.Text] = []
+        self.buffer_lines: list[ft.Text] = []
+
+        self.history_column = ft.Column(spacing=0)
+        self.buffer_column = ft.Column(spacing=0)
+
+        # Pre-populate buffer lines
         for _ in range(self.rows):
-            self.terminal_lines.append(self._create_empty_line())
+            self.buffer_lines.append(self._create_empty_line())
+
+        self.buffer_column.controls = self.buffer_lines
 
         self.expand = True
         self.bgcolor = "#1e1e1e"
@@ -32,7 +40,7 @@ class TerminalComponent(ft.Container):
         self.border_radius = 5
 
         self.content = ft.Column(
-            controls=self.terminal_lines,
+            controls=[self.history_column, self.buffer_column],
             spacing=0,
             expand=True,
             scroll=ft.ScrollMode.AUTO,
@@ -105,8 +113,19 @@ class TerminalComponent(ft.Container):
             self.screen.resize(self.rows, self.cols)
             self.shell.resize(self.rows, self.cols)
 
-            # We no longer manually clear/recreate lines here because _update_display
-            # handles the variable length (history + buffer).
+            # Rebuild buffer lines
+            self.buffer_lines = []
+            for _ in range(self.rows):
+                self.buffer_lines.append(self._create_empty_line())
+            self.buffer_column.controls = self.buffer_lines
+            self.buffer_column.update()
+
+            # Clear history lines on resize as it might invalidate line wrapping
+            self.history_lines = []
+            self.history_column.controls = []
+            self.history_column.update()
+
+            # The next update_display will repopulate from screen.history
 
             self._update_display()
 
@@ -184,30 +203,37 @@ class TerminalComponent(ft.Container):
 
     def _update_display(self) -> None:
         """Update the UI controls based on the current screen buffer and history."""
-        # Combine history (deque) and current buffer (dictionary-like lines)
+        # 1. Update History
         # screen.history is a named tuple (top, bottom, ...). top contains scrolled-off lines.
-        history_lines = list(self.screen.history.top)
-        buffer_lines = [self.screen.buffer[i] for i in range(self.rows)]
-        all_lines = history_lines + buffer_lines
+        current_history = list(self.screen.history.top)
 
-        total_lines_needed = len(all_lines)
-        lines_added = False
+        # If history grew, add new lines
+        if len(current_history) > len(self.history_lines):
+            # Identify new lines
+            new_history_data = current_history[len(self.history_lines) :]
 
-        # Adjust UI control count
-        while len(self.terminal_lines) < total_lines_needed:
-            new_line = self._create_empty_line()
-            self.terminal_lines.append(new_line)
-            if isinstance(self.content, ft.Column):
-                self.content.controls.append(new_line)
-            lines_added = True
+            for line_data in new_history_data:
+                spans = self._render_line_data(line_data)
 
-        # (Optional) If we wanted to shrink, we could, but history usually grows.
+                new_line = self._create_empty_line()
+                new_line.spans = spans
+                new_line.value = None
 
-        # Update existing controls
-        for i, line_data in enumerate(all_lines):
-            # Render the line data into spans
+                self.history_lines.append(new_line)
+                self.history_column.controls.append(new_line)
+
+            self.history_column.update()
+
+        # 2. Update Buffer (Active Screen)
+        # Iterate over the active buffer rows
+        for i in range(self.rows):
+            # Get line data from pyte screen buffer
+            line_data = self.screen.buffer[i]
+
+            # Render spans
             spans = self._render_line_data(line_data)
-            current_line = self.terminal_lines[i]
+
+            current_line = self.buffer_lines[i]
             old_spans = current_line.spans
 
             # Optimization: Compare spans to determine if update is needed
@@ -226,16 +252,11 @@ class TerminalComponent(ft.Container):
                 current_line.spans = spans
                 current_line.value = None
 
-                # Only update individual lines if we are NOT doing a full content update later
-                # and the line is actually mounted.
-                if not lines_added and current_line.page:
+                # Only update individual lines if the line is actually mounted
+                if current_line.page:
                     current_line.update()
 
-        # Update column layout if controls were added (this renders new lines and updates old ones)
-        if lines_added and isinstance(self.content, ft.Column):
-            self.content.update()
-
-        # Auto-scroll to bottom
+        # 3. Auto-scroll to bottom
         if isinstance(self.content, ft.Column):
             self.content.scroll_to(offset=float("inf"), duration=0)
 
