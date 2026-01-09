@@ -2,7 +2,6 @@ import pytest
 from unittest.mock import MagicMock, patch
 import flet as ft
 from sysengn.ui.components.terminal import TerminalComponent
-from typing import Any
 
 
 @pytest.fixture
@@ -114,6 +113,100 @@ def test_key_mapping_comprehensive(terminal_component):
     mock_shell.reset_mock()
     terminal_component._on_key(e)
     mock_shell.write.assert_not_called()
+
+
+def test_vt100_rendering_colors(terminal_component):
+    """Test that VT100 color codes are rendered correctly."""
+    # Mock page and shell
+    terminal_component.page = MagicMock()
+
+    # Mock the update method on terminal lines to avoid "must be added to page" error
+    # We need to mock it on the actual objects in the list
+    for line in terminal_component.terminal_lines:
+        line.update = MagicMock()
+
+    # Capture the task passed to run_task
+    captured_tasks = []
+    terminal_component.page.run_task = lambda x: captured_tasks.append(x)
+
+    # Simulate shell output with Red color
+    # \x1b[31m is Red in ANSI
+    red_hello = "\x1b[31mHello"
+
+    # Trigger output
+    terminal_component._on_shell_output(red_hello)
+
+    # Execute the captured task (it's a coroutine)
+    import asyncio
+
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+
+    loop.run_until_complete(captured_tasks[0]())
+
+    # Verify pyte screen content
+    char = terminal_component.screen.buffer[0][0]
+    assert char.data == "H"
+    assert char.fg == "red"
+
+    # Verify UI rendering (TextSpans)
+    first_line = terminal_component.terminal_lines[0]
+
+    # It should use spans
+    assert len(first_line.spans) > 0
+
+    # First span: "Hello" in red
+    span1 = first_line.spans[0]
+    assert span1.text == "Hello"
+    assert span1.style.color == ft.Colors.RED
+
+
+def test_vt100_rendering_integration(terminal_component):
+    """Test full pipeline from shell output to TextSpans."""
+    # Mock page
+    mock_page = MagicMock()
+    terminal_component.page = mock_page
+
+    # Mock the update method on terminal lines to avoid "must be added to page" error
+    for line in terminal_component.terminal_lines:
+        line.update = MagicMock()
+
+    # Capture the task passed to run_task
+    captured_tasks = []
+    mock_page.run_task = lambda x: captured_tasks.append(x)
+
+    # Feed input: Red "Hello" then reset then " World"
+    terminal_component._on_shell_output("\x1b[31mHello\x1b[0m World")
+
+    # Execute the captured task
+    import asyncio
+
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+
+    loop.run_until_complete(captured_tasks[0]())
+
+    # Verify first line content
+    first_line = terminal_component.terminal_lines[0]
+
+    # It should use spans now
+    assert len(first_line.spans) > 0
+
+    # First span: "Hello" in red
+    span1 = first_line.spans[0]
+    assert span1.text == "Hello"
+    # Check for both Flet constant and raw string if map_color implementation varies
+    assert span1.style.color == ft.Colors.RED
+
+    # Second span: " World" in default (white)
+    span2 = first_line.spans[1]
+    # The terminal fills the rest of the line with spaces, so we check startswith or strip
+    assert span2.text.startswith(" World")
+    assert span2.style.color == ft.Colors.WHITE
 
 
 def test_click_focus(terminal_component):

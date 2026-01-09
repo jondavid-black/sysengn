@@ -135,19 +135,66 @@ class TerminalComponent(ft.Container):
         async def update_ui() -> None:
             # Feed data to pyte
             self.stream.feed(text)
-
-            # Update the display
-            # We use screen.display for plain text rendering for now,
-            # as it's significantly faster and simpler for the first pass.
-            display_lines = self.screen.display
-
-            for i, line_content in enumerate(display_lines):
-                if i < len(self.terminal_lines):
-                    # Replace spaces with non-breaking spaces to preserve formatting if needed,
-                    # but monospace font usually handles standard spaces fine.
-                    # However, Flet/Flutter sometimes trims trailing spaces or collapses them?
-                    # Let's trust monospace for now.
-                    self.terminal_lines[i].value = line_content
-                    self.terminal_lines[i].update()
+            self._update_display()
 
         self.page.run_task(update_ui)
+
+    def _update_display(self) -> None:
+        """Update the UI controls based on the current screen buffer."""
+        for y in range(self.rows):
+            if y < len(self.terminal_lines):
+                spans = self._render_line(y)
+                self.terminal_lines[y].spans = spans
+                self.terminal_lines[y].value = None  # Clear value when using spans
+                self.terminal_lines[y].update()
+
+    def _render_line(self, y: int) -> list[ft.TextSpan]:
+        """Render a single line from the pyte buffer into TextSpans."""
+        spans = []
+        line = self.screen.buffer[y]
+
+        current_text = ""
+        current_fg = None
+
+        # Iterate through columns
+        for x in range(self.cols):
+            char = line.get(x, self.screen.default_char)
+            fg = self._map_color(char.fg)
+
+            # Check if style changed
+            if fg != current_fg:
+                if current_text:
+                    spans.append(
+                        ft.TextSpan(
+                            text=current_text, style=ft.TextStyle(color=current_fg)
+                        )
+                    )
+                current_text = char.data
+                current_fg = fg
+            else:
+                current_text += char.data
+
+        # Add remaining text
+        if current_text:
+            spans.append(
+                ft.TextSpan(text=current_text, style=ft.TextStyle(color=current_fg))
+            )
+
+        return spans
+
+    def _map_color(self, color: str) -> str:
+        """Map pyte color names to Flet colors."""
+        if color == "default":
+            return ft.Colors.WHITE
+
+        color_map = {
+            "black": ft.Colors.WHITE,  # Map black to white for visibility on dark bg
+            "red": ft.Colors.RED,
+            "green": ft.Colors.GREEN,
+            "brown": ft.Colors.YELLOW,
+            "blue": ft.Colors.BLUE,
+            "magenta": ft.Colors.PURPLE,
+            "cyan": ft.Colors.CYAN,
+            "white": ft.Colors.WHITE,
+        }
+        return color_map.get(color, ft.Colors.WHITE)
