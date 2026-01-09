@@ -228,3 +228,47 @@ def test_click_focus(terminal_component):
     terminal_component._on_click(e)
     assert not terminal_component.focused
     assert terminal_component.border.top.color == ft.Colors.TRANSPARENT
+
+
+def test_terminal_resize(terminal_component):
+    """Test that resizing the terminal updates the shell and screen dimensions."""
+    # Mock shell
+    mock_shell = MagicMock()
+    terminal_component.shell = mock_shell
+
+    # Mock page and update to avoid "not added to page" error
+    terminal_component.page = MagicMock()
+
+    # Mock content column update
+    if isinstance(terminal_component.content, ft.Column):
+        terminal_component.content.update = MagicMock()
+
+    # Mock _update_display to avoid rendering issues with new unattached controls
+    # We are testing resize logic here, not rendering
+    terminal_component._update_display = MagicMock()
+
+    # Initial size (default 80x24)
+    assert terminal_component.cols == 80
+    assert terminal_component.rows == 24
+
+    # Resize width only (calculating cols from width / CHAR_WIDTH)
+    # CHAR_WIDTH = 9. So 900 width -> 100 cols
+    terminal_component.handle_resize(900)
+
+    assert terminal_component.cols == 100
+    # Rows shouldn't change if height not provided
+    assert terminal_component.rows == 24
+
+    # Verify shell.resize called
+    mock_shell.resize.assert_called_with(24, 100)
+    terminal_component._update_display.assert_called()
+
+    # Resize both
+    # CHAR_HEIGHT = 18. So 540 height -> 30 rows
+    terminal_component.handle_resize(450, 540)
+
+    assert terminal_component.cols == 50  # 450/9 = 50
+    assert terminal_component.rows == 30  # 540/18 = 30
+
+    # Verify shell.resize called with new values
+    mock_shell.resize.assert_called_with(30, 50)
