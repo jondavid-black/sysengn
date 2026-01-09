@@ -1,7 +1,10 @@
+import fcntl
 import os
 import pty
 import select
+import struct
 import subprocess
+import termios
 import threading
 from typing import Callable
 
@@ -59,6 +62,25 @@ class ShellManager:
         finally:
             # The parent process doesn't need the slave fd
             os.close(slave_fd)
+
+    def resize(self, rows: int, cols: int) -> None:
+        """Resizes the pseudo-terminal window.
+
+        Args:
+            rows: New number of rows.
+            cols: New number of columns.
+        """
+        if self.master_fd is None:
+            return
+
+        # struct winsize { unsigned short ws_row, ws_col, ws_xpixel, ws_ypixel; };
+        # HHHH is 4 unsigned shorts
+        winsize = struct.pack("HHHH", rows, cols, 0, 0)
+        try:
+            fcntl.ioctl(self.master_fd, termios.TIOCSWINSZ, winsize)
+        except OSError:
+            # PTY might be closed or invalid
+            pass
 
     def write(self, command: str) -> None:
         """Sends a command to the shell.
