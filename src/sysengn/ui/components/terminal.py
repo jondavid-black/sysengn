@@ -50,6 +50,7 @@ class TerminalComponent(ft.Container):
             size=14,
             no_wrap=True,
             color=ft.Colors.WHITE,
+            bgcolor=ft.Colors.TRANSPARENT,
         )
 
     def did_mount(self) -> None:
@@ -206,13 +207,29 @@ class TerminalComponent(ft.Container):
         for i, line_data in enumerate(all_lines):
             # Render the line data into spans
             spans = self._render_line_data(line_data)
-            self.terminal_lines[i].spans = spans
-            self.terminal_lines[i].value = None
+            current_line = self.terminal_lines[i]
+            old_spans = current_line.spans
 
-            # Only update individual lines if we are NOT doing a full content update later
-            # and the line is actually mounted.
-            if not lines_added and self.terminal_lines[i].page:
-                self.terminal_lines[i].update()
+            # Optimization: Compare spans to determine if update is needed
+            has_changed = False
+            if old_spans is None or len(spans) != len(old_spans):
+                has_changed = True
+            else:
+                for s1, s2 in zip(spans, old_spans):
+                    c1 = s1.style.color if s1.style else None
+                    c2 = s2.style.color if s2.style else None
+                    if s1.text != s2.text or c1 != c2:
+                        has_changed = True
+                        break
+
+            if has_changed:
+                current_line.spans = spans
+                current_line.value = None
+
+                # Only update individual lines if we are NOT doing a full content update later
+                # and the line is actually mounted.
+                if not lines_added and current_line.page:
+                    current_line.update()
 
         # Update column layout if controls were added (this renders new lines and updates old ones)
         if lines_added and isinstance(self.content, ft.Column):
@@ -220,7 +237,7 @@ class TerminalComponent(ft.Container):
 
         # Auto-scroll to bottom
         if isinstance(self.content, ft.Column):
-            self.content.scroll_to(offset=float("inf"), duration=10)
+            self.content.scroll_to(offset=float("inf"), duration=0)
 
     def _render_line_data(self, line) -> list[ft.TextSpan]:
         """Render a single line object (from history or buffer) into TextSpans."""
