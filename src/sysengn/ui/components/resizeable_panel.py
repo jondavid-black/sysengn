@@ -16,11 +16,12 @@ class ResizeableSidePanel(ft.Row):
         min_width: float = 200,
         max_width: float = 800,
         visible: bool = False,
-        on_resize: Callable[[float], None] | None = None,
+        on_resize: Callable[[float, float], None] | None = None,
     ):
         super().__init__()
         self.content_control = content
         self.current_width = initial_width
+        self.current_height = 0.0  # Will be set via handle_resize
         self.min_width = min_width
         self.max_width = max_width
         self.visible = visible
@@ -75,6 +76,12 @@ class ResizeableSidePanel(ft.Row):
 
         self.controls = [self.resize_handle, self.content_container]
 
+    def handle_resize(self, height: float) -> None:
+        """Handle vertical resize of the panel."""
+        self.current_height = height
+        if self.on_resize:
+            self.on_resize(self.current_width, self.current_height)
+
     def _on_pan_update(self, e: ft.DragUpdateEvent) -> None:
         """Handle drag events to resize the panel."""
         # Since panel is on the right, dragging left (negative dx) increases width
@@ -90,7 +97,7 @@ class ResizeableSidePanel(ft.Row):
         self.content_container.update()
 
         if self.on_resize:
-            self.on_resize(self.current_width)
+            self.on_resize(self.current_width, self.current_height)
 
     def toggle(self) -> None:
         """Toggle the visibility of the panel."""

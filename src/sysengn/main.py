@@ -185,15 +185,33 @@ def main_page(page: ft.Page) -> None:
     terminal_panel = ResizeableSidePanel(
         content=terminal_component,
         visible=False,
-        on_resize=lambda w: terminal_component.handle_resize(w),
+        on_resize=lambda w, h: terminal_component.handle_resize(w, h),
     )
     # Position the panel on the right side of the Stack
     terminal_panel.right = 0
     terminal_panel.top = 0
     terminal_panel.bottom = 0
 
+    def handle_page_resize(e: ft.ControlEvent | None = None) -> None:
+        """Handle page resize to update layout components."""
+        # AppBar is usually around 56-64px. Let's assume 60px for safety or measure it if possible.
+        # Flet AppBar height is not directly available as a simple property always.
+        app_bar_height = 60
+
+        # page.height can be None during initialization
+        current_page_height = page.height if page.height else 800
+        available_height = current_page_height - app_bar_height
+
+        # Update terminal panel height
+        if terminal_panel.visible:
+            terminal_panel.handle_resize(available_height)
+
+    page.on_resize = handle_page_resize
+
     def toggle_terminal():
         terminal_panel.toggle()
+        # Trigger resize to ensure correct dimensions on first open
+        handle_page_resize()
         page.update()
 
     app_bar = SysEngnAppBar(

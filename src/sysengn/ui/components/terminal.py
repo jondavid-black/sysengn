@@ -43,6 +43,7 @@ class TerminalComponent(ft.Container):
             controls=self.terminal_lines,
             spacing=0,
             expand=True,
+            scroll=ft.ScrollMode.AUTO,
         )
 
         # Input handling
@@ -83,15 +84,11 @@ class TerminalComponent(ft.Container):
         cols = int(width / self.CHAR_WIDTH)
 
         # If height is provided, calculate rows, otherwise keep current rows
-        # For now, we mainly resize width via the side panel
-        # But we could also calculate rows if we knew the container height
         if height is not None:
-            rows = int(height / self.CHAR_HEIGHT)
+            # Subtract padding (top+bottom = 20) from height before calculating rows
+            available_height = height - (self.padding * 2 if self.padding else 20)
+            rows = int(available_height / self.CHAR_HEIGHT)
         else:
-            # Fallback or keep current.
-            # Ideally we should use the height of the container if possible.
-            # But the side panel currently only resizes width.
-            # So we'll stick with current rows unless we get a height update.
             rows = self.rows
 
         # Only update if changed

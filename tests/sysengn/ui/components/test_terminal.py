@@ -265,11 +265,14 @@ def test_terminal_resize(terminal_component):
 
     # Resize both
     # CHAR_HEIGHT = 18. So 540 height -> 30 rows
+    # The updated logic subtracts 20px padding (or default 20)
+    # So 540 - 20 = 520
+    # 520 / 18 = 28.88 -> 28 rows
     terminal_component.handle_resize(450, 540)
 
     # 450 / 8.5 = 52.94 -> 52
     assert terminal_component.cols == 52
-    assert terminal_component.rows == 30  # 540/18 = 30
+    assert terminal_component.rows == 28  # (540-20)/18 = 28.8 -> 28
 
     # Verify shell.resize called with new values
-    mock_shell.resize.assert_called_with(30, 52)
+    mock_shell.resize.assert_called_with(28, 52)
