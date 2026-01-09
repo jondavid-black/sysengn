@@ -86,9 +86,12 @@ class TerminalComponent(ft.Container):
 
         # If height is provided, calculate rows, otherwise keep current rows
         if height is not None:
-            # Subtract padding (top+bottom = 10 from self.padding*2) from height before calculating rows
-            # Padding is 5 now, so 10.
-            available_height = height - (self.padding * 2 if self.padding else 10)
+            # Subtract padding (top+bottom) from height before calculating rows
+            padding_val: float = 10.0
+            if isinstance(self.padding, (int, float)):
+                padding_val = float(self.padding) * 2
+
+            available_height = height - padding_val
             rows = int(available_height / self.CHAR_HEIGHT)
         else:
             rows = self.rows
@@ -187,6 +190,7 @@ class TerminalComponent(ft.Container):
         all_lines = history_lines + buffer_lines
 
         total_lines_needed = len(all_lines)
+        lines_added = False
 
         # Adjust UI control count
         while len(self.terminal_lines) < total_lines_needed:
@@ -194,6 +198,7 @@ class TerminalComponent(ft.Container):
             self.terminal_lines.append(new_line)
             if isinstance(self.content, ft.Column):
                 self.content.controls.append(new_line)
+            lines_added = True
 
         # (Optional) If we wanted to shrink, we could, but history usually grows.
 
@@ -203,10 +208,14 @@ class TerminalComponent(ft.Container):
             spans = self._render_line_data(line_data)
             self.terminal_lines[i].spans = spans
             self.terminal_lines[i].value = None
-            self.terminal_lines[i].update()
 
-        # Update column layout if controls were added
-        if isinstance(self.content, ft.Column):
+            # Only update individual lines if we are NOT doing a full content update later
+            # and the line is actually mounted.
+            if not lines_added and self.terminal_lines[i].page:
+                self.terminal_lines[i].update()
+
+        # Update column layout if controls were added (this renders new lines and updates old ones)
+        if lines_added and isinstance(self.content, ft.Column):
             self.content.update()
 
         # Auto-scroll to bottom
